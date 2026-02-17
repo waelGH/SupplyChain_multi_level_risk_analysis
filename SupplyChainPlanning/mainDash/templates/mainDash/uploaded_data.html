@@ -1,0 +1,19 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'mainDash/style.css' %}">
+<html>
+<head>
+    <title>Uploaded CSV Data</title>
+</head>
+<body>
+    <h1>Uploaded CSV Data</h1>
+    <a href="{% url 'index_case_study' %}" class="btn btn-primary">Return to Dashboard</a>
+    <table>
+        {% for row in data %}
+        <tr>
+            {% for item in row %}
+            <td>{{ item }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</body>

@@ -1,0 +1,42 @@
+{% load static %}
+<head>
+    <link src="https://kit.fontawesome.com/963475e21a.js" crossorigin="anonymous"></script>
+</head>
+<link rel="stylesheet" href="{% static 'mainDash/style.css' %}">
+<table class="styled-table">
+  <tr>
+    <th style="width:200px">Item</th>
+    <th><a href="{% url 'index' 'quantity' %}">Quantity required</a></th>
+    <th><a href="{% url 'index' 'criticality' %}">Item criticality</a></th>
+    <th><a href="{% url 'index' 'date_req' %}">Due date</a></th>
+    {% for date in potential_dates %}
+    <th>{{  date  }}</th>
+    {% endfor %}
+  </tr>
+
+  {{ table_body | safe }}
+</table>
+
+<table class="styled-table">
+  <tr>
+      <th style="width:200px">Item</th>
+    <th><a href="{% url 'index' 'quantity' %}">Quantity required</a></th>
+    <th><a href="{% url 'index' 'criticality' %}">Item criticality</a></th>
+    <th><a href="{% url 'index' 'date_req' %}">Due date</a></th>
+    {% for date in potential_dates %}
+    <th>{{  date  }}</th>
+    {% endfor %}
+  </tr>
+
+  {{ table_body_alt | safe }}
+</table>
+
+{% if image_urls %}
+<div>
+{% for image_url in image_urls %}
+<img src="data:image/png;base64,{{ image_url }}" alt="Line Chart">
+{% endfor %}
+</div>
+{% endif %}
+
+<a href="{% url 'index' %}" class="btn btn-primary">Return to Dashboard</a>

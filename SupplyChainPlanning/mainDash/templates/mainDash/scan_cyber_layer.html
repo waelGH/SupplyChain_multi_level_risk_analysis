@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cyber Layer Scan</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f6fa;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 🔷 Top Box */
+    .top-box {
+      background-color: #1976d2;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+
+    /* 🔶 Middle Box: Shortened */
+    .middle-box {
+      height: 180px;
+      padding: 20px;
+      background-color: #ffffff;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Container for the two dropdowns side-by-side */
+    .select-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .scroll-list {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .scroll-list label {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .scroll-list select {
+      width: 180px;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    /* Scan Button */
+    .scan-btn {
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 12px 24px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .scan-btn:hover {
+      background-color: #1565c0;
+    }
+
+    /* 🔽 Bottom Box: Results */
+    .bottom-box {
+      flex: 1;
+      background-color: #eef1f5;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .results-box {
+      background: #fff;
+      border-radius: 5px;
+      padding: 15px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      height: 100%;
+    }
+
+    #scan-btn {
+        padding: 12px 20px;
+        background-color: #1976d2;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 100%;  /* optional: full width in container */
+        max-width: 300px;
+        display: block;
+        margin: 20px auto;  /* center horizontally */
+        }
+
+    #scan-btn:hover {
+        background-color: #1565c0;
+        }
+  </style>
+</head>
+<body>
+
+  <!-- 🔷 Top Section -->
+  <div class="top-box">
+    Cyber Threats Scanning
+  </div>
+
+  <!-- 🔶 Middle Section: Dropdowns + Button -->
+  <div class="middle-box">
+    <div class="select-container">
+        <!-- 🔹 Component Selector -->
+        <div class="scroll-list">
+        <label for="component-select">Select part or material:</label>
+        <select id="component-select" name="component">
+            {% for p in parts %}
+            <option value="{{ p.id }}">{{ p.part_name }}</option>
+            {% empty %}
+            <option disabled>No components found</option>
+            {% endfor %}
+        </select>
+        </div>
+
+        <!-- 🔸 Supplier Selector -->
+        <div class="scroll-list">
+        <label for="supplier-select">Select Supplier:</label>
+        <select id="supplier-select" name="supplier">
+        <option value="">-- Select Supplier --</option>
+        </select>
+        </div>
+    </div>
+
+    <!-- Scan Button -->
+    <button id="scan-btn">Scan</button>
+  </div>
+
+  <!-- 🔽 Bottom Section: Results -->
+  <div class="bottom-box" id="bottom-box-results">
+    <div class="results-box">
+      <p><strong>Results:</strong></p>
+      <p>Select a component and a supplier, then click Scan to analyze potential cyber threats.</p>
+    </div>
+  </div>
+
+</body>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("component-select").addEventListener("change", function () {
+    const partid = this.value;
+    const supplierSelect = document.getElementById("supplier-select");
+
+    // Clear existing options
+    supplierSelect.innerHTML = '<option value="">-- Loading Suppliers --</option>';
+
+    if (partid) {
+      fetch(`/mainDash/get-suppliers/${partid}/`)
+        .then(response => response.json())
+        .then(data => {
+          console.log("Fetched JSON data:", data.suppliers);
+          supplierSelect.innerHTML = '<option value="">-- Select Supplier --</option>';
+          data.suppliers.forEach(supplier => {
+            const option = document.createElement("option");
+            console.log("show supplier:", supplier.name);
+            option.textContent = supplier.name;
+            supplierSelect.appendChild(option);
+          });
+        })
+        .catch(error => {
+          console.error("Error fetching suppliers:", error);
+          supplierSelect.innerHTML = '<option value="">-- Error loading --</option>';
+        });
+    }
+});
+  
+    document.getElementById("scan-btn").addEventListener("click", function () {
+    const componentSelect = document.getElementById("component-select");
+    const supplierSelect = document.getElementById("supplier-select");
+
+    const selectedComponentId = componentSelect.value;
+    const selectedComponentText = componentSelect.options[componentSelect.selectedIndex].text;
+
+    const selectedSupplierId = supplierSelect.value;
+    const selectedSupplierText = supplierSelect.options[supplierSelect.selectedIndex].text;
+    
+    const resultBox = document.getElementById("bottom-box-results");
+    
+    console.log("Scan button clicked");
+    console.log("Part ID:", selectedComponentId, "| Name:", selectedComponentText);
+    console.log("Supplier ID:", selectedSupplierId, "| Name:", selectedSupplierText);
+    
+    if (!selectedComponentId || !selectedSupplierId) {
+      resultBox.innerHTML = `<p style="color:red;">Please select both a part and supplier.</p>`;
+      return;
+    }
+
+    resultBox.innerHTML = "Scanning... please wait.";
+    
+    fetch(`/mainDash/scan-analysis/?component_id=${selectedComponentId}&supplier_id=${selectedSupplierId}`)
+      .then(response => response.json())
+      .then(data => {
+    if (data.status === "ok") {
+        let cveTableHTML = "";
+
+        if (data.cve_data && data.cve_data.length > 0) {
+            cveTableHTML = `
+            <h4>🔍 CVE Details (${data.cve_data.length} found)</h4>
+            <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-top: 10px;">
+                <thead style="background-color: #f2f2f2;">
+                <tr>
+                    <th>CVE ID</th>
+                    <th>Severity</th>
+                    <th>Score</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                ${data.cve_data.map(cve => `
+                    <tr>
+                    <td>${cve.cve_id}</td>
+                    <td>${cve.severity}</td>
+                    <td>${cve.score}</td>
+                    <td>${cve.description}</td>
+                    </tr>
+                `).join('')}
+                </tbody>
+            </table>
+            `;
+        } else {
+            cveTableHTML = `<p>No CVEs found.</p>`;
+        }
+
+        resultBox.innerHTML = `
+            <h3> Scan Result</h3>
+            <p><strong>Message:</strong> ${data.message}</p>
+            ${cveTableHTML}
+        `;
+        }
+        
+    else {
+          resultBox.innerHTML = `<p style="color:red;">${data.message}</p>`;
+        }
+    })
+      .catch(error => {
+        console.error("Scan failed:", error);
+        resultBox.innerHTML = `<p style="color:red;">An error occurred while scanning.</p>`;
+      });
+
+    });
+});
+</script>
+</html>

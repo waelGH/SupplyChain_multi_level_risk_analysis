@@ -1,0 +1,89 @@
+.btn {
+    color: whitesmoke;
+    padding: 10px;
+    margin: 5px;
+    background-color: #4CAF50;
+    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+    text-decoration:none;
+    box-shadow: none;
+  }
+
+.btn:link {
+    color: whitesmoke;
+    text-decoration:none;
+}
+
+.btn:active {
+    color: rgb(24, 24, 24);
+    text-decoration:none;
+}
+
+.btn:hover {
+    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);
+    text-decoration:none;
+}
+
+.topleft {
+    grid-area: myArea;
+}
+
+.bottomleft {
+    grid-area: importArea;
+}
+
+.theRight {
+    grid-area: theRight;
+}
+
+.theLegend {
+    grid-area: theLegend;
+}
+
+.legendContent {
+    column-count: 3;
+}
+
+.grid-container {
+    display: grid;
+    grid-template:
+      'myArea theRight theRight theRight'
+      'myArea theRight theRight theRight'
+      'importArea theLegend theLegend theLegend';
+}
+
+.styled-table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.styled-table thead tr {
+    background-color: #009879;
+    color: #4CAF50;
+    text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+    padding: 12px 15px;
+}
+
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid #009879;
+}
+
+.styled-table tbody tr.active-row {
+    font-weight: bold;
+    color: #009879;
+}

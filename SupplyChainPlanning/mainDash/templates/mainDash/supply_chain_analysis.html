@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Supply Chain Analysis</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .left-box {
+            width: 240px;
+            background: #e3eafc;
+            padding: 32px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            border-right: 1px solid #b6c6e3;
+            box-sizing: border-box;
+        }
+        .left-box button {
+            padding: 14px 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            background: #1976d2;
+            color: #fff;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+        .left-box button:hover {
+            background: #125ea2;
+        }
+        .right-box {
+            flex: 1;
+            padding: 40px 32px;
+            background: #fff;
+            overflow-y: auto;
+        }
+        .result-area {
+            background: #f0f0f0;
+            border-radius: 8px;
+            min-height: 80px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        #scenarioSelect {
+            margin-top: 16px;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            display: none;
+        }        
+        #supplierSelect {
+            margin-top: 16px;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            display: none;
+        }
+        
+        .custom-btn {
+            display: block;
+            background: #1976d2;
+            color: #fff;
+            padding: 14px 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .left-box button:hover {
+            background: #125ea2;
+        }
+        .custom-btn:hover {
+            background: #1565c0;
+}
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="left-box">
+        <h2 style="margin:0 0 18px 0; font-size:1.2em; color:#1976d2;">Physical Layer</h2>
+        <button onclick="showScenarios()">Scan News</button>
+        <button onclick="showResult('ports')">Scan Ports</button>
+        <button onclick="showResult('weather')">Scan Weather</button>
+        <h2 style="margin:0 0 18px 0; font-size:1.2em; color:#1976d2;">Cyber Layer</h2>
+        <a href="{% url 'scan_cyber_layer' %}" class="custom-btn">Cyber Threat </a>
+        <!-- <button onclick="scanCyberThreats()">Cyber Threats</button> -->
+    </div>
+    <div class="right-box">
+        <div id="result" class="result-area">
+            <h2>Supply Chain Risk Analysis Dashboard</h2>
+        </div>
+        <select id="scenarioSelect" onchange="performAnalysis()">
+                <option value="">Select a production chain</option>
+                <option value="scenario1">Production chain 1</option>
+                <option value="scenario2">Production chain 2</option>
+                <option value="scenario3">Production chain 3</option>
+        </select>
+        <select id="supplierSelect" onchange="cyberThreatAnlysisFct()">
+                <option value="">Select a supplier</option>
+                <option value="Raytheon Technologies">Raytheon Technologies</option>
+        </select>
+    </div>
+</div>
+<script>
+function showScenarios() {
+    document.getElementById('scenarioSelect').style.display = 'block';
+    document.getElementById('result').innerHTML = "<h2>Scan News</h2><p>Select a scenario from the dropdown below to perform an analysis.</p>";
+}
+
+// function scanCyberThreats() {
+//     // Update right box
+//     document.getElementById('supplierSelect').style.display = 'block';
+//     document.getElementById('result').innerHTML = "<h2>Scan Cyber Threats</h2><p>Select a supplier from the dropdown below to perform an analysis.</p>";
+// } 
+
+function showResult(value) {
+    document.getElementById('result').innerHTML = `<h2>${value}</h2><p>Performing analysis for ${value}...</p>`;
+}
+
+
+// document.addEventListener("DOMContentLoaded", function() {
+//     fetch("/get_dropdown_data/")     // Django endpoint
+//         .then(response => response.json())
+//         .then(data => {
+//             const supplierSelect = document.getElementById("supplierSelect");
+//             // Populate suppliers
+//             data.suppliers.forEach(supplier => {
+//                 let opt = document.createElement("option");
+//                 opt.value = supplier.id;
+//                 opt.textContent = supplier.supplier_name;
+//                 supplierSelect.appendChild(opt);
+//             });
+//         })
+//         .catch(err => console.error("Error loading dropdown data:", err));
+// });
+
+// function cyberThreatAnlysisFct(){
+//     const supplier = document.getElementById('supplierSelect').value;
+//     if (supplier) {
+//         document.getElementById('result').innerHTML = `<h2>${supplier}</h2><p>Performing cyber threat analysis for ${supplier}...</p>`;
+//         fetch(`/mainDash/perform_cyber_analysis_view/?scenario=${scenario}`)
+
+//     }
+
+
+// }
+
+function performAnalysis() {
+    const scenario = document.getElementById('scenarioSelect').value;
+    if (scenario) {
+        document.getElementById('result').innerHTML = `<h2>${scenario}</h2><p>Performing analysis for ${scenario}...</p>`;
+
+        // Make an AJAX request to the Django view
+        fetch(`/mainDash/perform_analysis_view/?scenario=${scenario}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    // Update the result area with the risk score
+                    document.getElementById('result').innerHTML = `
+
+                    <h2>Part: ${data.part_name}</h2>  
+                    <h2>Part Supplier: ${data.part_supplier_name}</h2> 
+                    <h2>Risk Score: ${data.risk_score}</h2>
+                    
+                    `;
+
+                    // Update the map with the supplier's location
+                    const supplierLat = data.supplierInfo.lat;
+                    const supplierLon = data.supplierInfo.lon;
+                    console.log("Supplier Latitude:", supplierLat);
+                    console.log("Supplier Longitude:", supplierLon);
+
+                } else {
+                    document.getElementById('result').innerHTML = `<p>Error: ${data.message}</p>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = `<p>Error: Unable to perform analysis for production chain ${scenario}.</p>`;
+                console.error("Error:", error);
+            });
+    }
+}
+</script>
+</body>
+</html>

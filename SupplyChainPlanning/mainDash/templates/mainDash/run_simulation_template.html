@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Supply Chain Planning & Simulation</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background: #f4f4f4;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .left-box {
+            width: 260px;
+            background: linear-gradient(180deg, #eff5ff 0%, #e4eefc 100%);
+            padding: 28px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-right: 1px solid #b6c6e3;
+            box-sizing: border-box;
+        }
+        .panel-title {
+            margin: 0;
+            color: #12325f;
+            font-size: 1.18em;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .panel-subtitle {
+            margin: 2px 0 12px;
+            color: #4f6688;
+            font-size: 0.88em;
+            line-height: 1.45;
+        }
+        .panel-button {
+            padding: 12px 12px;
+            font-size: 0.95em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.2s ease;
+            box-shadow: 0 3px 10px rgba(34, 86, 153, 0.16);
+        }
+        .panel-button:active {
+            transform: translateY(1px);
+        }
+        .panel-button.plan-btn {
+            background: linear-gradient(135deg, #2d7fe7 0%, #1f67bd 100%);
+        }
+        .panel-button.plan-btn:hover {
+            background: linear-gradient(135deg, #2a75d4 0%, #1d5ca8 100%);
+            box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
+        }
+        .panel-button.sim-btn {
+            background: linear-gradient(135deg, #1f9f84 0%, #0d7f67 100%);
+        }
+        .panel-button.sim-btn:hover {
+            background: linear-gradient(135deg, #1c8f77 0%, #0b705a 100%);
+            box-shadow: 0 6px 14px rgba(18, 105, 88, 0.2);
+        }
+        .right-box {
+            flex: 1;
+            padding: 40px 32px;
+            background: #fff;
+            overflow-y: auto;
+        }
+        .result-area {
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+        .section-title {
+            margin: 0 0 8px;
+            color: #1c345b;
+            font-size: 1.18em;
+            font-weight: 700;
+            letter-spacing: 0.1px;
+        }
+        .graph-wrap {
+            width: 100%;
+            overflow-x: auto;
+            background: #ffffff;
+            border: 1px solid #d8dde8;
+            border-radius: 8px;
+            padding: 12px;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+        .graph-caption {
+            margin: 8px 0 0;
+            font-size: 0.92em;
+            color: #506079;
+        }
+        .map-wrap {
+            width: 100%;
+            margin-top: 10px;
+            border: 1px solid #d8dde8;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+        }
+        #supplierLocationMap {
+            width: 100%;
+            min-height: 360px;
+        }
+        .map-message {
+            margin: 10px 0 0;
+            color: #4f5f78;
+            font-size: 0.9em;
+        }
+        .tree-node {
+            cursor: pointer;
+        }
+        .tree-node.active rect {
+            stroke: #d64545 !important;
+            stroke-width: 3.2 !important;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="left-box">
+        <h2 class="panel-title">Simulation Planner</h2>
+        <p class="panel-subtitle">Build a production plan, then run risk simulation on the selected chain.</p>
+        <button class="panel-button plan-btn" onclick="generateProductionPlan()">Generate Production Plan</button>
+        <button class="panel-button sim-btn" onclick="runSimulation()">Run Simulation</button>
+    </div>
+
+    <div class="right-box">
+        <div id="productionPlanResult" class="result-area">
+            <h2 class="section-title">Production Plan</h2>
+            <p>No plan generated yet.</p>
+        </div>
+
+        <div id="simulationResult" class="result-area" style="display: none;">
+            <h2 class="section-title">Simulation Results</h2>
+            <p>No simulation run yet.</p>
+        </div>
+
+        <div id="supplierMapSection" class="result-area" style="display: none;">
+            <h2 class="section-title">Supplier Location Map</h2>
+            <p class="graph-caption">Unique supplier locations from the selected production plan.</p>
+            <div class="map-wrap">
+                <div id="supplierLocationMap"></div>
+            </div>
+            <p id="supplierMapMessage" class="map-message"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPlan = null;
+let currentPlanTree = null;
+const SVG_NS = "http://www.w3.org/2000/svg";
+let supplierMap = null;
+let supplierMapLayer = null;
+let leafletAssetsPromise = null;
+let markerByLocationKey = new Map();
+let nodeToLocationKey = new Map();
+let activeTreeNodeElement = null;
+
+function createSvgElement(tag, attrs = {}) {
+    const element = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([key, value]) => {
+        element.setAttribute(key, String(value));
+    });
+    return element;
+}
+
+function truncateLabel(value, maxChars = 18) {
+    if (!value) return "";
+    const text = String(value);
+    return text.length > maxChars ? `${text.slice(0, maxChars - 1)}...` : text;
+}
+
+function tierColor(tier) {
+    if (tier === "system") return { fill: "#dff1ff", stroke: "#2f74b5" };
+    if (tier === "component") return { fill: "#e9f7ea", stroke: "#2f9143" };
+    if (tier === "part") return { fill: "#fff4df", stroke: "#c47b18" };
+    if (tier === "raw_material") return { fill: "#f5ebff", stroke: "#7651a5" };
+    return { fill: "#edf1f8", stroke: "#62738a" };
+}
+
+function flattenTree(root) {
+    const rows = [];
+    let nextId = 0;
+
+    function walk(node, parentId = null, depth = 0) {
+        const row = {
+            id: nextId,
+            parentId,
+            depth,
+            name: node.name || "Unknown",
+            tier: node.tier || "unknown",
+            selectedSupplier: node.selected_supplier || null,
+            supplierCountry: node.supplier_info && node.supplier_info.country ? node.supplier_info.country : null,
+            children: []
+        };
+        nextId += 1;
+        rows.push(row);
+
+        const childNodes = Array.isArray(node.children) ? node.children : [];
+        childNodes.forEach((child) => {
+            const childRow = walk(child, row.id, depth + 1);
+            row.children.push(childRow);
+        });
+        return row;
+    }
+
+    const rootRow = walk(root);
+    return { rootRow, rows };
+}
+
+function assignYPositions(rootRow) {
+    let leafIndex = 0;
+
+    function visit(node) {
+        if (!node.children.length) {
+            node.leafIndex = leafIndex;
+            leafIndex += 1;
+            return node.leafIndex;
+        }
+        const childYs = node.children.map(visit);
+        const sum = childYs.reduce((acc, value) => acc + value, 0);
+        node.leafIndex = sum / childYs.length;
+        return node.leafIndex;
+    }
+
+    visit(rootRow);
+    return Math.max(leafIndex, 1);
+}
+
+function appendNodeLabel(parent, x, y, mainLabel, subLabel) {
+    const title = [mainLabel, subLabel].filter(Boolean).join(" | ");
+    const main = createSvgElement("text", {
+        x,
+        y: y - 3,
+        "text-anchor": "middle",
+        "font-size": "12",
+        "font-weight": "600",
+        fill: "#1d2b3d"
+    });
+    main.textContent = truncateLabel(mainLabel, 22);
+    main.appendChild(createSvgElement("title")).textContent = title;
+    parent.appendChild(main);
+
+    if (subLabel) {
+        const sub = createSvgElement("text", {
+            x,
+            y: y + 13,
+            "text-anchor": "middle",
+            "font-size": "10",
+            fill: "#5c6c82"
+        });
+        sub.textContent = truncateLabel(subLabel, 24);
+        sub.appendChild(createSvgElement("title")).textContent = title;
+        parent.appendChild(sub);
+    }
+}
+
+function setActiveTreeNode(element) {
+    if (activeTreeNodeElement) {
+        activeTreeNodeElement.classList.remove("active");
+    }
+    activeTreeNodeElement = element;
+    if (activeTreeNodeElement) {
+        activeTreeNodeElement.classList.add("active");
+    }
+}
+
+function focusNodeOnMap(nodeName) {
+    const locationKey = nodeToLocationKey.get(nodeName);
+    if (!locationKey) return;
+    const marker = markerByLocationKey.get(locationKey);
+    if (!marker || !supplierMap) return;
+    const latLng = marker.getLatLng();
+    supplierMap.setView(latLng, Math.max(supplierMap.getZoom(), 5), { animate: true });
+    marker.openPopup();
+}
+
+function renderProductionPlanGraph(planTree, container) {
+    if (!planTree || typeof planTree !== "object") {
+        container.innerHTML = `
+            <h2 class="section-title">Production Plan</h2>
+            <p>Error: Invalid tree format for selected plan.</p>
+        `;
+        return;
+    }
+
+    const { rootRow, rows } = flattenTree(planTree);
+    const leafCount = assignYPositions(rootRow);
+    const tierOrder = ["system", "component", "part", "raw_material"];
+
+    let maxTierIndex = 0;
+    rows.forEach((row) => {
+        const tierIndex = tierOrder.indexOf(row.tier);
+        row.tierIndex = tierIndex >= 0 ? tierIndex : row.depth;
+        if (row.tierIndex > maxTierIndex) maxTierIndex = row.tierIndex;
+    });
+
+    const graphWidth = Math.max(1100, 270 + (maxTierIndex + 1) * 250);
+    const topPadding = 110;
+    const bottomPadding = 80;
+    const leftPadding = 130;
+    const columnGap = 250;
+    const rowGap = 88;
+    const graphHeight = Math.max(360, topPadding + bottomPadding + (leafCount - 1) * rowGap);
+
+    container.innerHTML = `
+        <h2 class="section-title">Production Plan</h2>
+        <div class="graph-wrap" id="planGraphHost"></div>
+    `;
+
+    const host = document.getElementById("planGraphHost");
+    const svg = createSvgElement("svg", {
+        viewBox: `0 0 ${graphWidth} ${graphHeight}`,
+        width: graphWidth,
+        height: graphHeight
+    });
+
+    svg.appendChild(createSvgElement("rect", {
+        x: 35,
+        y: 20,
+        width: graphWidth - 70,
+        height: graphHeight - 40,
+        rx: 14,
+        fill: "#fbfcff",
+        stroke: "#dbe4f3"
+    }));
+
+    const columns = [];
+    for (let i = 0; i <= maxTierIndex; i += 1) {
+        columns.push(leftPadding + i * columnGap);
+    }
+
+    const tierLabels = {
+        system: "Vessel",
+        component: "Subsystems",
+        part: "Parts",
+        raw_material: "Raw Materials"
+    };
+
+    columns.forEach((x, idx) => {
+        const tier = tierOrder[idx] || `level_${idx}`;
+        const label = tierLabels[tier] || tier.replace("_", " ");
+        svg.appendChild(createSvgElement("text", {
+            x,
+            y: 58,
+            "text-anchor": "middle",
+            "font-size": "15",
+            "font-weight": "700",
+            fill: "#1f355b"
+        })).textContent = label;
+    });
+
+    rows.forEach((row) => {
+        row.x = columns[row.tierIndex] || (leftPadding + row.tierIndex * columnGap);
+        row.y = topPadding + row.leafIndex * rowGap;
+    });
+
+    const rowsById = {};
+    rows.forEach((row) => {
+        rowsById[row.id] = row;
+    });
+
+    rows.forEach((row) => {
+        if (row.parentId === null) return;
+        const parent = rowsById[row.parentId];
+        if (!parent) return;
+
+        const path = createSvgElement("path", {
+            d: `M ${parent.x + 85} ${parent.y} C ${parent.x + 125} ${parent.y}, ${row.x - 125} ${row.y}, ${row.x - 85} ${row.y}`,
+            fill: "none",
+            stroke: "#90a6c8",
+            "stroke-width": 2.2
+        });
+        path.appendChild(createSvgElement("title")).textContent = `${parent.name} -> ${row.name}`;
+        svg.appendChild(path);
+    });
+
+    rows.forEach((row) => {
+        const colors = tierColor(row.tier);
+        const group = createSvgElement("g", {
+            class: "tree-node",
+            tabindex: "0"
+        });
+        const box = createSvgElement("rect", {
+            x: row.x - 85,
+            y: row.y - 24,
+            width: 170,
+            height: 48,
+            rx: 12,
+            fill: colors.fill,
+            stroke: colors.stroke,
+            "stroke-width": 2.2
+        });
+        box.appendChild(createSvgElement("title")).textContent = row.name;
+        group.appendChild(box);
+
+        const supplierText = row.selectedSupplier
+            ? `${row.selectedSupplier}${row.supplierCountry ? ` (${row.supplierCountry})` : ""}`
+            : null;
+        appendNodeLabel(group, row.x, row.y, row.name, supplierText);
+
+        group.addEventListener("click", () => {
+            setActiveTreeNode(group);
+            focusNodeOnMap(row.name);
+        });
+        group.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setActiveTreeNode(group);
+                focusNodeOnMap(row.name);
+            }
+        });
+        svg.appendChild(group);
+    });
+
+    svg.appendChild(createSvgElement("text", {
+        x: graphWidth - 340,
+        y: graphHeight - 32,
+        "font-size": "11",
+        fill: "#607089"
+    })).textContent = `${rows.length} total node(s)`;
+
+    host.appendChild(svg);
+}
+
+function extractSupplierLocations(plan) {
+    const unique = new Map();
+    const entries = Object.entries(plan || {});
+
+    entries.forEach(([nodeName, value]) => {
+        if (!Array.isArray(value) || value.length < 2) return;
+        const supplierName = value[0];
+        const info = value[1] || {};
+        const lat = Number(info.Lat);
+        const lon = Number(info.Lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+        const key = `${lat.toFixed(6)},${lon.toFixed(6)}`;
+        if (!unique.has(key)) {
+            unique.set(key, {
+                key,
+                lat,
+                lon,
+                country: info.country || "Unknown",
+                suppliers: new Set(),
+                nodes: new Set()
+            });
+        }
+
+        const current = unique.get(key);
+        current.suppliers.add(supplierName || "Unknown Supplier");
+        current.nodes.add(nodeName);
+    });
+
+    return Array.from(unique.values()).map(item => ({
+        ...item,
+        suppliers: Array.from(item.suppliers),
+        nodes: Array.from(item.nodes)
+    }));
+}
+
+function loadLeafletAssets() {
+    if (window.L) {
+        return Promise.resolve();
+    }
+    if (leafletAssetsPromise) {
+        return leafletAssetsPromise;
+    }
+    leafletAssetsPromise = new Promise((resolve, reject) => {
+        if (!document.getElementById("leaflet-css")) {
+            const css = document.createElement("link");
+            css.id = "leaflet-css";
+            css.rel = "stylesheet";
+            css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+            css.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+            css.crossOrigin = "";
+            document.head.appendChild(css);
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+        script.crossOrigin = "";
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Leaflet assets."));
+        document.head.appendChild(script);
+    });
+
+    return leafletAssetsPromise;
+}
+
+function renderSupplierMap(plan) {
+    const section = document.getElementById("supplierMapSection");
+    const mapMessage = document.getElementById("supplierMapMessage");
+    const mapContainer = document.getElementById("supplierLocationMap");
+    section.style.display = "block";
+    mapMessage.textContent = "";
+
+    const locations = extractSupplierLocations(plan);
+    if (!locations.length) {
+        nodeToLocationKey = new Map();
+        markerByLocationKey = new Map();
+        if (supplierMapLayer) {
+            supplierMapLayer.clearLayers();
+        }
+        mapMessage.textContent = "No valid supplier coordinates were found in this plan.";
+        return;
+    }
+
+    loadLeafletAssets()
+        .then(() => {
+            if (!supplierMap) {
+                supplierMap = L.map(mapContainer).setView([locations[0].lat, locations[0].lon], 3);
+                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                    maxZoom: 19,
+                    attribution: "&copy; OpenStreetMap contributors"
+                }).addTo(supplierMap);
+            }
+            if (!supplierMapLayer) {
+                supplierMapLayer = L.layerGroup().addTo(supplierMap);
+            } else {
+                supplierMapLayer.clearLayers();
+            }
+
+            markerByLocationKey = new Map();
+            nodeToLocationKey = new Map();
+
+            locations.forEach((location, index) => {
+                const marker = L.marker([location.lat, location.lon], {
+                    title: location.suppliers.join(", ")
+                });
+                const popupHtml = `
+                    <div style="max-width:280px;">
+                        <strong>Location #${index + 1}</strong><br/>
+                        <strong>Suppliers:</strong> ${location.suppliers.join(", ")}<br/>
+                        <strong>Nodes:</strong> ${location.nodes.join(", ")}<br/>
+                        <strong>Country:</strong> ${location.country}<br/>
+                        <strong>Coordinates:</strong> ${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}
+                    </div>
+                `;
+                marker.bindPopup(popupHtml);
+                marker.addTo(supplierMapLayer);
+                markerByLocationKey.set(location.key, marker);
+
+                location.nodes.forEach((nodeName) => {
+                    nodeToLocationKey.set(nodeName, location.key);
+                });
+            });
+
+            const bounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]));
+
+            if (locations.length === 1) {
+                supplierMap.setView([locations[0].lat, locations[0].lon], 5);
+            } else {
+                supplierMap.fitBounds(bounds.pad(0.2));
+            }
+
+            setTimeout(() => supplierMap.invalidateSize(), 0);
+            mapMessage.textContent = `Showing ${locations.length} unique location(s). Click a pin for details.`;
+        })
+        .catch((error) => {
+            mapMessage.textContent = `${error.message} Please allow access to Leaflet CDN resources.`;
+        });
+}
+
+function generateProductionPlan() {
+    fetch("/mainDash/generate_plan/")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                currentPlan = data.plan;
+                currentPlanTree = data.plan_tree;
+                console.log("data:", data);
+                const container = document.getElementById("productionPlanResult");
+
+                if (!currentPlanTree || typeof currentPlanTree !== "object") {
+                    container.innerHTML = `<p>Error: Invalid plan tree format</p>`;
+                    return;
+                }
+
+                renderProductionPlanGraph(currentPlanTree, container);
+                renderSupplierMap(currentPlan);
+
+                document.getElementById("simulationResult").style.display = "none";
+            } else {
+                alert("Failed to generate plan: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error("Plan generation error:", error);
+            alert("Error generating plan.");
+        });
+}
+
+function runSimulation() {
+    // if (!currentPlan) {
+    //     alert("Please generate a production plan first.");
+    //     return;
+    // }
+
+    document.getElementById('productionPlanResult').innerHTML = `
+        <h2 class="section-title">Production Plan</h2>
+        <p>Running simulation...</p>
+    `;
+
+    fetch("/mainDash/simulate_plan/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify({ plan: currentPlan })
+    })
+    .then(res => res.json())
+    .then(data => {
+        const simBox = document.getElementById('simulationResult');
+        simBox.style.display = "block";
+
+        if (data.status === "success") {
+            const riskDict = data.risk_scores;
+
+            const riskRows = Object.entries(riskDict).map(([node, details]) => `
+                <tr>
+                    <td>${node}</td>
+                    <td>${details.tier}</td>
+                    <td>${details.risk_from_news.toFixed(2)}</td>
+                    <td>${details.cyber_risk_score}</td>
+                </tr>
+            `).join('');
+
+            simBox.innerHTML = `
+                <h2 class="section-title">Simulation Results</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node</th>
+                            <th>Tier</th>
+                            <th>News Risk</th>
+                            <th>Cyber Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${riskRows}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            simBox.innerHTML = `<p>Error: ${data.message}</p>`;
+        }
+    })
+    .catch(error => {
+        console.error("Simulation error:", error);
+        alert("Simulation failed.");
+    });
+}
+
+// CSRF helper for POSTs
+function getCSRFToken() {
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+}
+</script>
+</body>
+</html>
