@@ -1,0 +1,82 @@
+{% load static %}
+<head>
+    <link src="https://kit.fontawesome.com/963475e21a.js" crossorigin="anonymous"></script>
+</head>
+<link rel="stylesheet" href="{% static 'mainDash/style.css' %}">
+<div class="grid-container">
+<fieldset class="topleft">
+    <form method="get" action="{% url 'detail' %}">
+    <h1>Bill of Materials</h1>
+    {% if latest_BOM %}
+    <table class="styled-table">
+        <tr>
+            <th></th>
+          <th style="width:200px">Item</th>
+          <th><a href="{% url 'index' 'quantity' %}">Quantity required</a></th>
+          <th><a href="{% url 'index' 'criticality' %}">Item criticality</a></th>
+          <th>Potential Suppliers</th>
+          <th><a href="{% url 'index' 'date_req' %}">Due date</a></th>
+        </tr>
+    
+    {% for item, value in latest_BOM %}
+        <tr>
+            <td><input type="checkbox" name="selected_items" value="{{ item.id }}"></td>
+            <td><a href="{% url 'index' item.id %}">{{ item.item_description }}</a></td>
+            <td class="item-quantity">{{ item.quantity }}</td>
+            <td>{{ item.criticality }}</td>
+            <td>{{ value }}</td>
+            <td>{{  item.date_req.date  }}</td>
+
+        </tr>
+    {% endfor %}
+</table>
+<button type="submit">Submit</button>
+    </form>
+{% else %}
+    <p>No items are available.</p>
+{% endif %}
+<div id="slider-container">
+    <h2>Quantity Threshold</h2>
+    <input type="range" id="slider" min="0" max="20" step="1">
+    <span id="slider-value">10</span>
+</div>
+
+</fieldset>
+<fieldset class="bottomleft">
+    <h1>Link Data Sets</h1>
+    <a href="{% url 'upload_bom_suppliers' %}" class="btn btn-primary">Upload Bill of Material Data</a>
+    <a href="{% url 'upload_csv_suppliers' %}" class="btn btn-primary">Upload Supplier Data</a>
+</fieldset>
+<fieldset class="theRight">
+    {% if map %}
+    <div> {{ map | safe }}</div>
+    {% endif %}
+</fieldset>
+{% if legend %}
+    <fieldset class="theLegend"><div class="legendContent">{{ legend | safe }}</div></fieldset>
+    {% endif %}
+</div>
+<!-- Add this script to your template, preferably at the bottom of the <body> tag -->
+    <script>
+        const slider = document.getElementById("slider");
+        const sliderValue = document.getElementById("slider-value");
+        const sliderContainer = document.getElementById("slider-container");
+        const quantityElements = document.getElementsByClassName("item-quantity");
+        console.log(quantityElements)
+        
+        slider.addEventListener("input", function() {
+            const newValue = this.value;
+            sliderValue.textContent = newValue;
+
+            for (let i = 0, len = quantityElements.length; i < len; i++) 
+            {
+                if (+quantityElements[i].innerHTML < newValue)
+                    quantityElements[i].setAttribute('style', 'color: blue;');
+                else
+                    quantityElements[i].setAttribute('style', 'color: red;font-weight: bold;');
+            }
+            
+            
+        });
+        </script>
+        
