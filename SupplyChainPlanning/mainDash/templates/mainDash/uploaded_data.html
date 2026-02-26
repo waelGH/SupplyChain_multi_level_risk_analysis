@@ -2,10 +2,10 @@
 <link rel="stylesheet" href="{% static 'mainDash/style.css' %}">
 <html>
 <head>
-    <title>Uploaded CSV Data</title>
+    <title>Project Load Summary</title>
 </head>
 <body>
-    <h1>Uploaded CSV Data</h1>
+    <h1>Project Load Summary</h1>
     <a href="{% url 'index_case_study' %}" class="btn btn-primary">Return to Dashboard</a>
     <table>
         {% for row in data %}

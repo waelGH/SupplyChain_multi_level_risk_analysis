@@ -53,12 +53,57 @@
             height: 97%;
             min-height: 200px;
             background: #e0e0e0;
-            border: 2px dashed #bbb;
+            border: 1px solid #c6ced8;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #888;
             font-size: 1.5em;
+        }
+        .supplier-row {
+            cursor: pointer;
+        }
+        .supplier-row.active-row {
+            background: #eaf3ff;
+        }
+        .filter-row {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.92em;
+        }
+        .filter-row select {
+            min-width: 240px;
+            padding: 6px 10px;
+            border: 1px solid #c6ced8;
+            border-radius: 6px;
+            background: #fff;
+        }
+        .bottomleft .btn,
+        .bottomleft .btn.btn-primary {
+            display: inline-block;
+            background: #1f6fd0;
+            border: 1px solid #1658a8;
+            color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .bottomleft .btn:hover,
+        .bottomleft .btn.btn-primary:hover {
+            background: #195fb3;
+            border-color: #124786;
+        }
+        .bottomleft .btn:active,
+        .bottomleft .btn.btn-primary:active {
+            background: #124d91;
+            border-color: #0f3f76;
         }
     </style>
 </head>
@@ -68,108 +113,160 @@
         <fieldset class="topleft">
             <form method="get" action="{% url 'detail' %}">
             <h1>System Details</h1>
-            {% if uploaded_parts %}
+            <p><strong>Program:</strong> {{ program_name }}</p>
+            <p><strong>System:</strong> {{ system_name }}</p>
+            {% if supplier_rows %}
+            <div class="filter-row">
+                <label for="tierFilter"><strong>Filter Tier:</strong></label>
+                <select id="tierFilter">
+                    {% for option in tier_filter_options %}
+                    <option value="{{ option.value }}">{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <table class="styled-table">
                 <tr>
-                    <th>Part Name</th>
-                    <th>Part Number</th>
-                    <th>Quantity</th>
-                    <th>Criticality</th>
-                    <th>Due Date</th>
-                    <th>Component</th>
+                    <th>Tier</th>
+                    <th>Node</th>
+                    <th>Supplier</th>
+                    <th>Country</th>
+                    <th>Lat</th>
+                    <th>Lon</th>
                 </tr>
-                {% for part in uploaded_parts %}
-                <tr class="part-row" data-part-id="{{ part.id }}" style="cursor:pointer;">
-                    <td>{{ part.part_name }}</td>
-                    <td>{{ part.part_number }}</td>
-                    <td>{{ part.quantity }}</td>
-                    <td>{{ part.criticality }}</td>
-                    <td>{{ part.date_req|date:"Y-m-d" }}</td>
-                    <td>{{ part.component.component_name }}</td>
+                {% for row in supplier_rows %}
+                <tr class="supplier-row"
+                    data-tier="{{ row.tier_key }}"
+                    data-node="{{ row.node_name }}"
+                    data-supplier="{{ row.supplier_name }}"
+                    data-lat="{{ row.latitude }}"
+                    data-lon="{{ row.longitude }}">
+                    <td>{{ row.tier_label }}</td>
+                    <td>{{ row.node_name }}</td>
+                    <td>{{ row.supplier_name }}</td>
+                    <td>{{ row.country }}</td>
+                    <td>{{ row.latitude|floatformat:3 }}</td>
+                    <td>{{ row.longitude|floatformat:3 }}</td>
                 </tr>
                 {% endfor %}
             </table>
             {% else %}
-                <p>No parts are available.</p>
+                <p>No supplier rows are available.</p>
             {% endif %}
         </fieldset>
 
         <fieldset class="bottomleft">
             <h1>Upload Data and Analysis </h1>
-            <a href="{% url 'load_project' %}" class="btn btn-primary">Load Project</a>
-            <a href="{% url 'scan_supply_chain' %}" class="btn btn-primary">Scan supply chain</a>
+            <a href="{% url 'load_project' %}" class="btn btn-primary">Load Project Data</a>
+            <a href="{% url 'scan_supply_chain' %}" class="btn btn-primary">Scan Supply chain Nodes</a>
             <a href="{% url 'run_simulation' %}" class="btn btn-primary">Run Simulation</a>
         </fieldset>
     </div>
     <div class="right-map">
-        <div class="map-placeholder">
-            Map goes here
-        </div>
+        <div id="tier1Map" class="map-placeholder"></div>
     </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{{ supplier_map_points|json_script:"supplier-map-points" }}
 <script>
-    const rows = document.querySelectorAll(".part-row");
-    rows.forEach(row => {
-        row.addEventListener("click", function () {
-            const partId = this.dataset.partId;
-            fetch(`/mainDash/get-suppliers/${partId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateMap(data.suppliers,data.raw_suppliers);
-                    } else {
-                        alert("Failed to load suppliers.");
-                    }
-                });
-        });
-    });
-
-    // Initialize Leaflet map
-    const map = L.map(document.querySelector(".map-placeholder")).setView([20, 0], 2);
+    const mapPoints = JSON.parse(document.getElementById("supplier-map-points").textContent);
+    const map = L.map(document.getElementById("tier1Map")).setView([20, 0], 2);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19
     }).addTo(map);
 
-    let markers = [];
+    const markersByKey = new Map();
+    const markerEntries = [];
 
-    function updateMap(suppliers,raw_suppliers) {
-        // Clear old markers
-        markers.forEach(marker => map.removeLayer(marker));
-        markers = [];
-
-        suppliers.forEach(supplier => {
-            const marker = L.marker([supplier.latitude, supplier.longitude])
-                .addTo(map)
-                .bindPopup(`<strong>${supplier.name}</strong><br>`);
-            markers.push(marker);
+    mapPoints.forEach((point) => {
+        const lat = Number(point.latitude);
+        const lon = Number(point.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+        const key = `${lat.toFixed(6)}|${lon.toFixed(6)}|${point.supplier_name}|${point.node_name}|${point.tier_key}`;
+        const marker = L.marker([lat, lon]).addTo(map)
+            .bindPopup(`
+                <strong>${point.supplier_name}</strong><br>
+                Tier: ${point.tier_label}<br>
+                Node: ${point.node_name}<br>
+                Country: ${point.country}<br>
+                Lat/Lon: ${lat.toFixed(4)}, ${lon.toFixed(4)}
+            `);
+        markersByKey.set(key, marker);
+        markerEntries.push({
+            marker,
+            tier: point.tier_key,
+            lat,
+            lon
         });
+    });
 
-        if (suppliers.length > 0) {
-            const bounds = L.latLngBounds(suppliers.map(s => [s.latitude, s.longitude]));
-            map.fitBounds(bounds);
-        }
+    const rows = document.querySelectorAll(".supplier-row");
+    const tierFilter = document.getElementById("tierFilter");
 
-        raw_suppliers.forEach(supplier => {
-            const redIcon = new L.Icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                });
-            const marker = L.marker([supplier.latitude, supplier.longitude],{ icon: redIcon })
-                .addTo(map)
-                .bindPopup(`<strong>${supplier.name}</strong><br>Material: ${supplier.material_name || ''}`);
-            markers.push(marker);
-        });
-        if (raw_suppliers.length > 0) {
-            const bounds = L.latLngBounds(suppliers.map(s => [s.latitude, s.longitude]));
-            map.fitBounds(bounds);
+    function fitMapForVisibleMarkers() {
+        const visible = markerEntries
+            .filter(entry => map.hasLayer(entry.marker))
+            .map(entry => [entry.lat, entry.lon]);
+        if (visible.length > 0) {
+            map.fitBounds(L.latLngBounds(visible), { padding: [20, 20] });
         }
     }
+
+    function applyFilter() {
+        const selectedTier = tierFilter ? tierFilter.value : "";
+        rows.forEach((row) => {
+            const matches = !selectedTier || row.dataset.tier === selectedTier;
+            row.style.display = matches ? "" : "none";
+            if (!matches) {
+                row.classList.remove("active-row");
+            }
+        });
+
+        markerEntries.forEach((entry) => {
+            const matches = !selectedTier || entry.tier === selectedTier;
+            if (matches) {
+                if (!map.hasLayer(entry.marker)) {
+                    entry.marker.addTo(map);
+                }
+            } else if (map.hasLayer(entry.marker)) {
+                map.removeLayer(entry.marker);
+            }
+        });
+
+        fitMapForVisibleMarkers();
+    }
+
+    rows.forEach(row => {
+        row.addEventListener("click", function () {
+            rows.forEach(r => r.classList.remove("active-row"));
+            this.classList.add("active-row");
+
+            const lat = Number(this.dataset.lat);
+            const lon = Number(this.dataset.lon);
+            const supplier = this.dataset.supplier;
+            const node = this.dataset.node;
+            const tier = this.dataset.tier;
+            const markerKey = `${lat.toFixed(6)}|${lon.toFixed(6)}|${supplier}|${node}|${tier}`;
+            const marker = markersByKey.get(markerKey);
+
+            if (!marker) {
+                return;
+            }
+
+            map.setView([lat, lon], 5, { animate: true });
+            marker.openPopup();
+        });
+    });
+
+    if (tierFilter) {
+        tierFilter.addEventListener("change", applyFilter);
+    }
+
+    applyFilter();
+
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 0);
 </script>
 
 </body>

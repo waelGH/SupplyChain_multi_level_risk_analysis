@@ -35,8 +35,8 @@
         .panel-subtitle {
             margin: 2px 0 12px;
             color: #4f6688;
-            font-size: 0.88em;
-            line-height: 1.45;
+            font-size: 0.92em;
+            line-height: 1.5;
         }
         .panel-button {
             padding: 12px 12px;
@@ -54,18 +54,32 @@
             transform: translateY(1px);
         }
         .panel-button.plan-btn {
-            background: linear-gradient(135deg, #2d7fe7 0%, #1f67bd 100%);
+            background: linear-gradient(135deg, #2f82e8 0%, #1f67bd 100%);
         }
         .panel-button.plan-btn:hover {
-            background: linear-gradient(135deg, #2a75d4 0%, #1d5ca8 100%);
+            background: linear-gradient(135deg, #2b78d6 0%, #1d5da9 100%);
             box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
         }
         .panel-button.sim-btn {
-            background: linear-gradient(135deg, #1f9f84 0%, #0d7f67 100%);
+            background: linear-gradient(135deg, #2f82e8 0%, #1f67bd 100%);
         }
         .panel-button.sim-btn:hover {
-            background: linear-gradient(135deg, #1c8f77 0%, #0b705a 100%);
-            box-shadow: 0 6px 14px rgba(18, 105, 88, 0.2);
+            background: linear-gradient(135deg, #2b78d6 0%, #1d5da9 100%);
+            box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
+        }
+        .panel-button.mc-btn {
+            background: linear-gradient(135deg, #2f82e8 0%, #1f67bd 100%);
+        }
+        .panel-button.mc-btn:hover {
+            background: linear-gradient(135deg, #2b78d6 0%, #1d5da9 100%);
+            box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
+        }
+        .panel-button.opt-btn {
+            background: linear-gradient(135deg, #2f82e8 0%, #1f67bd 100%);
+        }
+        .panel-button.opt-btn:hover {
+            background: linear-gradient(135deg, #2b78d6 0%, #1d5da9 100%);
+            box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
         }
         .right-box {
             flex: 1;
@@ -86,6 +100,17 @@
             font-size: 1.18em;
             font-weight: 700;
             letter-spacing: 0.1px;
+        }
+        .advanced-analysis-area {
+            min-height: 540px;
+        }
+        .dashboard-title {
+            margin: 0;
+            color: #000;
+            font-size: 2.05em;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
         }
         .graph-wrap {
             width: 100%;
@@ -145,15 +170,16 @@
 <div class="container">
     <div class="left-box">
         <h2 class="panel-title">Simulation Planner</h2>
-        <p class="panel-subtitle">Build a production plan, then run risk simulation on the selected chain.</p>
-        <button class="panel-button plan-btn" onclick="generateProductionPlan()">Generate Production Plan</button>
+        <p class="panel-subtitle">Use this panel to review assigned suppliers, run risk simulations, and launch advanced analytics for supply chain decision support.</p>
+        <button class="panel-button plan-btn" onclick="generateProductionPlan()">View Assigned Suppliers</button>
         <button class="panel-button sim-btn" onclick="runSimulation()">Run Simulation</button>
+        <button class="panel-button mc-btn" onclick="runMonteCarloAnalysis()">Monte Carlo Analysis</button>
+        <button class="panel-button opt-btn" onclick="runSupplierSelectionOptimization()">Supplier Selection Optimization</button>
     </div>
 
     <div class="right-box">
         <div id="productionPlanResult" class="result-area">
-            <h2 class="section-title">Production Plan</h2>
-            <p>No plan generated yet.</p>
+            <h2 class="dashboard-title">Supply Chain Risk Intelligence Dashboard</h2>
         </div>
 
         <div id="simulationResult" class="result-area" style="display: none;">
@@ -169,6 +195,8 @@
             </div>
             <p id="supplierMapMessage" class="map-message"></p>
         </div>
+
+        <div id="advancedAnalysisResult" class="result-area advanced-analysis-area" style="display: none;"></div>
     </div>
 </div>
 
@@ -182,6 +210,9 @@ let leafletAssetsPromise = null;
 let markerByLocationKey = new Map();
 let nodeToLocationKey = new Map();
 let activeTreeNodeElement = null;
+let activeAnalysisView = "suppliers";
+let planRequestCounter = 0;
+let mapVisibleBeforeAdvanced = false;
 
 function createSvgElement(tag, attrs = {}) {
     const element = document.createElementNS(SVG_NS, tag);
@@ -305,7 +336,7 @@ function focusNodeOnMap(nodeName) {
 function renderProductionPlanGraph(planTree, container) {
     if (!planTree || typeof planTree !== "object") {
         container.innerHTML = `
-            <h2 class="section-title">Production Plan</h2>
+            <h2 class="section-title">Selected Suppliers</h2>
             <p>Error: Invalid tree format for selected plan.</p>
         `;
         return;
@@ -331,7 +362,7 @@ function renderProductionPlanGraph(planTree, container) {
     const graphHeight = Math.max(360, topPadding + bottomPadding + (leafCount - 1) * rowGap);
 
     container.innerHTML = `
-        <h2 class="section-title">Production Plan</h2>
+        <h2 class="section-title">Selected Suppliers</h2>
         <div class="graph-wrap" id="planGraphHost"></div>
     `;
 
@@ -591,10 +622,50 @@ function renderSupplierMap(plan) {
         });
 }
 
+function showAnalysisPanel(htmlContent) {
+    const advancedBox = document.getElementById("advancedAnalysisResult");
+    const productionBox = document.getElementById("productionPlanResult");
+    const mapBox = document.getElementById("supplierMapSection");
+    const simBox = document.getElementById("simulationResult");
+    advancedBox.style.display = "none";
+    productionBox.style.display = "block";
+    if (mapVisibleBeforeAdvanced) {
+        mapBox.style.display = "block";
+    }
+    simBox.style.display = "block";
+    simBox.innerHTML = htmlContent;
+    simBox.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showAdvancedAnalysisArea(title, description) {
+    const productionBox = document.getElementById("productionPlanResult");
+    const simulationBox = document.getElementById("simulationResult");
+    const mapBox = document.getElementById("supplierMapSection");
+    const advancedBox = document.getElementById("advancedAnalysisResult");
+
+    mapVisibleBeforeAdvanced = mapBox.style.display !== "none";
+    productionBox.style.display = "none";
+    simulationBox.style.display = "none";
+    mapBox.style.display = "none";
+
+    advancedBox.style.display = "block";
+    advancedBox.innerHTML = `
+        <h2 class="section-title">${title}</h2>
+        <p>${description}</p>
+    `;
+    advancedBox.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function generateProductionPlan() {
+    activeAnalysisView = "suppliers";
+    document.getElementById("advancedAnalysisResult").style.display = "none";
+    document.getElementById("productionPlanResult").style.display = "block";
+    const requestId = ++planRequestCounter;
     fetch("/mainDash/generate_plan/")
         .then(res => res.json())
         .then(data => {
+            if (requestId !== planRequestCounter) return;
+
             if (data.status === "success") {
                 currentPlan = data.plan;
                 currentPlanTree = data.plan_tree;
@@ -609,7 +680,9 @@ function generateProductionPlan() {
                 renderProductionPlanGraph(currentPlanTree, container);
                 renderSupplierMap(currentPlan);
 
-                document.getElementById("simulationResult").style.display = "none";
+                if (activeAnalysisView === "suppliers") {
+                    document.getElementById("simulationResult").style.display = "none";
+                }
             } else {
                 alert("Failed to generate plan: " + data.message);
             }
@@ -621,13 +694,16 @@ function generateProductionPlan() {
 }
 
 function runSimulation() {
+    activeAnalysisView = "simulation";
+    document.getElementById("advancedAnalysisResult").style.display = "none";
+    document.getElementById("productionPlanResult").style.display = "block";
     // if (!currentPlan) {
     //     alert("Please generate a production plan first.");
     //     return;
     // }
 
     document.getElementById('productionPlanResult').innerHTML = `
-        <h2 class="section-title">Production Plan</h2>
+        <h2 class="section-title">Selected Suppliers</h2>
         <p>Running simulation...</p>
     `;
 
@@ -641,9 +717,6 @@ function runSimulation() {
     })
     .then(res => res.json())
     .then(data => {
-        const simBox = document.getElementById('simulationResult');
-        simBox.style.display = "block";
-
         if (data.status === "success") {
             const riskDict = data.risk_scores;
 
@@ -656,7 +729,7 @@ function runSimulation() {
                 </tr>
             `).join('');
 
-            simBox.innerHTML = `
+            const simulationHtml = `
                 <h2 class="section-title">Simulation Results</h2>
                 <table>
                     <thead>
@@ -672,14 +745,31 @@ function runSimulation() {
                     </tbody>
                 </table>
             `;
+            showAnalysisPanel(simulationHtml);
         } else {
-            simBox.innerHTML = `<p>Error: ${data.message}</p>`;
+            showAnalysisPanel(`<p>Error: ${data.message}</p>`);
         }
     })
     .catch(error => {
         console.error("Simulation error:", error);
         alert("Simulation failed.");
     });
+}
+
+function runMonteCarloAnalysis() {
+    activeAnalysisView = "monte_carlo";
+    showAdvancedAnalysisArea(
+        "Monte Carlo Analysis",
+        "Monte Carlo analysis workspace. Results and distribution outputs will appear here."
+    );
+}
+
+function runSupplierSelectionOptimization() {
+    activeAnalysisView = "supplier_optimization";
+    showAdvancedAnalysisArea(
+        "Supplier Selection Optimization",
+        "Supplier selection optimization workspace. Recommendation outputs will appear here."
+    );
 }
 
 // CSRF helper for POSTs

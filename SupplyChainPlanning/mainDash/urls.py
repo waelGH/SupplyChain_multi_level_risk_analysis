@@ -16,6 +16,7 @@ urlpatterns = [
     path("get_dropdown_data/", views.get_dropdown_data, name="get_dropdown_data"),
     path("detail/analysis/", views.detail, name="detail"),
     path('upload-csv/load_project/', views.load_project, name='load_project'),
+    path('upload-csv/generate_data/', views.generate_data, name='generate_data'),
     path('upload-csv/data/', views.upload_case_parts_data, name='upload_case_parts_data'),
     path('upload-csv/data_suppliers/', views.upload_case_supplier_data, name='upload_case_supplier_data'),
     path('upload-csv/materials/', views.upload_material_data, name='upload_material_data'),

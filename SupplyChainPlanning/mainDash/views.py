@@ -4,6 +4,7 @@ import io
 import json
 import math
 import os
+from pathlib import Path
 import random
 import time
 import warnings
@@ -12,7 +13,6 @@ from urllib.parse import urlencode
 from io import TextIOWrapper
 
 # Third-party imports
-import gdelt
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
@@ -27,6 +27,8 @@ from openai import OpenAI
 
 # Django imports
 from django import forms
+from django.conf import settings
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.template import loader
@@ -34,6 +36,14 @@ from django.template import loader
 # Local imports
 from mainDash.static.mainDash.commodity_data import commodity_series_mapping
 from .models import Case_system, Part, Component, PartSupplier, Material, MaterialSupplier, ComponentSupplier
+from .network_modeling import (
+    build_physical_graph,
+    build_schedule_tree,
+    build_selected_plan_tree,
+    build_supplier_options,
+    load_case_study_csvs,
+    select_suppliers_for_tree,
+)
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
@@ -321,10 +331,33 @@ def calculate_risk_score(filtered_event_df):
         
     return risk_score
 
-def analyze_supplier_risk_from_news_workflow(supplier_name,supplier_lat, supplier_lon): 
+def analyze_supplier_risk_from_news_workflow(
+    supplier_name, supplier_lat, supplier_lon, return_details=False
+):
+    radius_miles = 50
+    scan_details = {
+        "risk_score": 0.0,
+        "scanned_location": "Unknown",
+        "radius_miles": radius_miles,
+        "events_in_window": 0,
+        "events_in_radius": 0,
+        "articles_count": 0,
+    }
+
+    try:
+        import gdelt
+    except Exception as exc:
+        print(f"GDELT import unavailable: {exc}")
+        return scan_details if return_details else 0
+
     # Transform lat,long pair of the supplier into an address
     geolocator = Nominatim(user_agent="geoapi")
-    location = geolocator.reverse((supplier_lat, supplier_lon), language='en')
+    location = None
+    try:
+        location = geolocator.reverse((supplier_lat, supplier_lon), language="en")
+    except Exception as exc:
+        print(f"Reverse geocoding failed for {supplier_name}: {exc}")
+
     print('Supplier Location.....',location)
     print('--------------------------')
 
@@ -334,6 +367,13 @@ def analyze_supplier_risk_from_news_workflow(supplier_name,supplier_lat, supplie
         supplier_town = supplier_address.get('town', None)
         supplier_state = supplier_address.get('state', None)
         supplier_country = supplier_address.get('country', None)
+        scan_details["scanned_location"] = (
+            getattr(location, "address", None)
+            or ", ".join(
+                [value for value in [supplier_city, supplier_town, supplier_state, supplier_country] if value]
+            )
+            or "Unknown"
+        )
         
     else:
         print("Location not found.")
@@ -350,11 +390,22 @@ def analyze_supplier_risk_from_news_workflow(supplier_name,supplier_lat, supplie
     end_date_str = end_date.strftime('%Y %B %d')
 
     Last_reports = gd.Search(date=[start_date_str, end_date_str], normcols=True)
+    if Last_reports is None:
+        Last_reports = pd.DataFrame()
+    scan_details["events_in_window"] = len(Last_reports)
     print("The number of GDELT reports in the last 30 days is", len(Last_reports)) 
     
     if (len(Last_reports) > 0): 
         ## Filter events by latitude and longitude ##
-        filtered_df = filter_events_within_radius(Last_reports, supplier_lat, supplier_lon, radius_miles=50)
+        filtered_df = filter_events_within_radius(Last_reports, supplier_lat, supplier_lon, radius_miles=radius_miles)
+        scan_details["events_in_radius"] = len(filtered_df)
+
+        if "numarticles" in filtered_df.columns:
+            scan_details["articles_count"] = int(
+                pd.to_numeric(filtered_df["numarticles"], errors="coerce").fillna(0).sum()
+            )
+        else:
+            scan_details["articles_count"] = len(filtered_df)
         
         ## Calculate risk score from collected events
         risk_score_from_gdelt = calculate_risk_score(filtered_df)
@@ -364,160 +415,145 @@ def analyze_supplier_risk_from_news_workflow(supplier_name,supplier_lat, supplie
         print('No report detected.....')
         risk_score = 0
 
-    return risk_score
+    scan_details["risk_score"] = risk_score
+    return scan_details if return_details else risk_score
+
+
+def _risk_level_from_score(risk_score):
+    score = _safe_float(risk_score, 0.0)
+    if score <= -3:
+        return {"label": "High Risk", "emoji": "🔴", "range": "≤ -3", "code": "high"}
+    if score <= -1:
+        return {"label": "Moderate", "emoji": "🟠", "range": "-3 to -1", "code": "moderate"}
+    if score <= 0:
+        return {"label": "Mild", "emoji": "🟡", "range": "-1 to 0", "code": "mild"}
+    if score <= 2:
+        return {"label": "Stable", "emoji": "🟢", "range": "0 to +2", "code": "stable"}
+    return {"label": "Positive", "emoji": "🔵", "range": "> +2", "code": "positive"}
 
 
 ##############################################################
 ################# Structures/classes used in analysis ########
 ##############################################################
-class Node:
-    def __init__(self, name, tier, suppliers, due_date, quantity=0):
-        self.tier = tier                  # "system","component", "part","raw_material"
-        self.name = name                  # name of the node
-        self.supplier =suppliers          # list of possible suppliers 
-        self.quantity = quantity          # Qty needed
-        self.due_date = due_date          # due date for the part/material
-        self.children = []                # list of sub-nodes (parts or materials)
-    
-    def add_child(self, child_node):
-        self.children.append(child_node)
+SUPPORTED_DATE_FORMATS = ("%Y-%m-%d", "%m/%d/%y", "%m/%d/%Y")
 
-def print_tree(node, level=0):
-    print("   " * level + f"- {node.tier.upper()}: {node.name}")
-    print("   " * level + f"  Suppliers: {list(node.supplier.keys()) if isinstance(node.supplier, dict) else node.supplier}")
-    for child in node.children:
-        print_tree(child, level+1)
 
-# Function to traverse the tree and select one supplier randomly for each node to create a production chain
-def select_random_suppliers(node, selected=None):
-    if selected is None:
-        selected = {}
+def _repo_root() -> Path:
+    return Path(settings.BASE_DIR).resolve().parent
 
-    # if the node has suppliers, pick one randomly
-    if node.supplier:  
-        chosen = random.choice(list(node.supplier.items()))
-        selected[node.name] = chosen
-        # Example print
-        #print(f"Node: {node.name} (Tier: {node.tier}) → Supplier chosen: {chosen}")
 
-    # loop through children
-    for child in node.children:
-        select_random_suppliers(child, selected)
+def _parse_optional_datetime(value):
+    if pd.isna(value):
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    for date_format in SUPPORTED_DATE_FORMATS:
+        try:
+            return datetime.strptime(text, date_format)
+        except ValueError:
+            continue
+    return None
 
-    return selected
 
-def build_selected_plan_tree(node, selected_chain):
-    selected_entry = selected_chain.get(node.name)
-    selected_supplier = selected_entry[0] if selected_entry else None
-    supplier_info = selected_entry[1] if selected_entry and len(selected_entry) > 1 else None
+def _safe_int(value, default: int = 0) -> int:
+    if pd.isna(value):
+        return default
+    try:
+        return int(round(float(value)))
+    except (TypeError, ValueError):
+        return default
 
-    return {
-        "name": node.name,
-        "tier": node.tier,
-        "selected_supplier": selected_supplier,
-        "supplier_info": supplier_info,
-        "children": [build_selected_plan_tree(child, selected_chain) for child in node.children]
-    }
 
-def scan_risk_for_nodes(node,production_chain,risk_score=None):
+def _safe_float(value, default: float = 0.0) -> float:
+    if pd.isna(value):
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if pd.isna(value):
+        return False
+    return str(value).strip().lower() in {"true", "1", "yes", "y"}
+
+
+def build_case_study_graph_model():
+    nodes_df, edges_df = load_case_study_csvs(_repo_root())
+    physical_graph = build_physical_graph(nodes_df, edges_df)
+    schedule_tree = build_schedule_tree(physical_graph)
+    supplier_options = build_supplier_options(nodes_df, edges_df)
+    return nodes_df, edges_df, schedule_tree, supplier_options
+
+
+def _walk_tree_nodes(schedule_tree):
+    roots = [node for node, degree in schedule_tree.in_degree() if degree == 0]
+    if len(roots) != 1:
+        raise ValueError(f"Expected one root in schedule tree; found {roots}")
+    root = roots[0]
+
+    ordered_nodes = []
+
+    def _dfs(node_id):
+        ordered_nodes.append(node_id)
+        children = sorted(
+            schedule_tree.successors(node_id),
+            key=lambda child: str(schedule_tree.nodes[child].get("name") or child),
+        )
+        for child in children:
+            _dfs(child)
+
+    _dfs(root)
+    return root, ordered_nodes
+
+
+def scan_risk_for_tree(schedule_tree, production_chain, risk_score=None):
     if risk_score is None:
         risk_score = {}
 
-    print('--------------------------')
-    print(production_chain.keys())
-    print('--------------------------')
+    _, ordered_nodes = _walk_tree_nodes(schedule_tree)
+    for node_id in ordered_nodes:
+        node_data = schedule_tree.nodes[node_id]
+        node_name = str(node_data.get("name") or node_id)
+        node_tier = str(node_data.get("node_type") or "unknown")
 
-    print('analyze risk for node',node.name, node.tier)
-    node_name = node.name
-    node_tier = node.tier
+        risk_from_news = 0.0
+        cyber_risk_score = 0
 
-    risk_from_news= 0
-    cyber_risk_score = 0
+        if node_tier == "part":
+            selected_entry = production_chain.get(node_name)
+            if selected_entry and len(selected_entry) > 1:
+                supplier_name = selected_entry[0]
+                supplier_info = selected_entry[1] or {}
+                supplier_lat = _safe_float(supplier_info.get("Lat"), 0.0)
+                supplier_lon = _safe_float(supplier_info.get("Lon"), 0.0)
 
-    ## for parts and raw materials, risk is calculated based on the following:
-    ## 1) Scan supplier location (news)
-    ## 2) scan supplier name (news)
-    ## 3) scan cyber thtreats associated with the name (only for parts)
-    ## 4) aggregate the risk score
-    if node_tier == 'part':
-        if node_name in production_chain.keys(): 
-            node_supplier_info = production_chain[node_name]
-            supplier_name = node_supplier_info[0]
-            supplier_lat = node_supplier_info[1]['Lat']
-            supplier_lon = node_supplier_info[1]['Lon']
-            supplier_country = node_supplier_info[1]['country']
+                if supplier_lat != 0.0 or supplier_lon != 0.0:
+                    try:
+                        risk_from_news = analyze_supplier_risk_from_news_workflow(
+                            supplier_name, supplier_lat, supplier_lon
+                        )
+                    except Exception as exc:
+                        print(f"Failed physical risk scan for {node_name}: {exc}")
+                        risk_from_news = 0.0
 
-            print('Scan physical risk based on supplier',supplier_name,'location')
-            risk_from_news = analyze_supplier_risk_from_news_workflow(supplier_name,supplier_lat, supplier_lon)
-            print('risk from news (average of tone and impact)',risk_from_news)
+                part_valid_cpes = get_valid_cpes_for_component(node_name)
+                all_cve_data = []
+                for cpe in part_valid_cpes:
+                    cve_results = get_cves_for_cpe(cpe)
+                    all_cve_data.extend(cve_results)
+                    time.sleep(0.6)
+                cyber_risk_score = len(all_cve_data)
 
-            print('Scan cyber risk based on part',node_name)
-            # from part: get possible CPEs
-            part_valid_cpes = get_valid_cpes_for_component(node_name)
-
-            # # Main collection loop
-            all_cve_data = []
-            for cpe in part_valid_cpes:
-                print(f"Querying CVEs for {cpe}...")
-                cve_results = get_cves_for_cpe(cpe)
-                
-                if not cve_results:  # Empty list check
-                    print("⚠️ No results, skipping...")
-                
-                all_cve_data.extend(cve_results)
-                time.sleep(0.6)  # To stay under rate limits
-        
-            cyber_risk_score = len(all_cve_data)  # Simple metric: number of CVEs found  
-            print('cyber risk score (number of CVEs found)',cyber_risk_score)   
-        else: 
-            print("No supplier info found for part", node_name)
-    elif node_tier == 'raw_material':
-        print('Raw material level - No risk calculated')
-        # if node_name in production_chain.keys(): 
-        #     node_supplier_info = production_chain[node_name]
-        #     supplier_name = node_supplier_info[0]
-        #     supplier_lat = node_supplier_info[1]['Lat']
-        #     supplier_lon = node_supplier_info[1]['Lon']
-        #     supplier_country = node_supplier_info[1]['country']
-
-        #     print('Scan physical risk based on supplier',supplier_name,'location')
-        #     risk_from_news = analyze_supplier_risk_from_news_workflow(supplier_name,supplier_lat, supplier_lon)
-        #     print('risk from news (average of tone and impact)',risk_from_news)
-
-        #     print('Scan cyber risk based on part',node_name)
-        #     # from part: get possible CPEs
-        #     part_valid_cpes = get_valid_cpes_for_component(node_name)
-
-        #     # # Main collection loop
-        #     all_cve_data = []
-        #     for cpe in part_valid_cpes:
-        #         print(f"Querying CVEs for {cpe}...")
-        #         cve_results = get_cves_for_cpe(cpe)
-                
-        #         if not cve_results:  # Empty list check
-        #             print("⚠️ No results, skipping...")
-                
-        #         all_cve_data.extend(cve_results)
-        #         time.sleep(0.6)  # To stay under rate limits
-        #     cyber_risk_score = len(all_cve_data)  # Simple metric: number of CVEs found  
-        #     print('cyber risk score (number of CVEs found)',cyber_risk_score)   
-        # else: 
-        #     print("No supplier info found for this raw material", node_name)
-
-    elif node_tier == 'component':
-        print("Component level - no risk calculated")
-    else: 
-        print("System level - no risk calculated")
-
-    risk_score[node_name] = {
-        "tier": node_tier,
-        "risk_from_news": risk_from_news,
-        "cyber_risk_score": cyber_risk_score
-    }
-
-    # loop through children
-    for child in node.children:
-        scan_risk_for_nodes(child, production_chain, risk_score)
+        risk_score[node_name] = {
+            "tier": node_tier,
+            "risk_from_news": risk_from_news,
+            "cyber_risk_score": cyber_risk_score,
+        }
 
     return risk_score
 
@@ -528,21 +564,115 @@ def scan_risk_for_nodes(node,production_chain,risk_score=None):
 # Index View for the dashboard (August 2025) 
 def index_case_study(request):
     template = loader.get_template("mainDash/index_case_study.html")
-    uploaded_parts = Part.objects.all()
-    selected_part_id = request.GET.get('selected_part')
-    suppliers = None
+    supplier_rows = []
+    tier_order = {"tier1": 0, "tier2": 1, "tier3": 2}
 
-    if selected_part_id:
-        try:
-            selected_part = Part.objects.get(id=selected_part_id)
-            suppliers = PartSupplier.objects.filter(part=selected_part)
-        except Part.DoesNotExist:
-            suppliers = None
+    def _append_supplier_row(record, tier_key, tier_label, node_name):
+        supplier_rows.append(
+            {
+                "tier_key": tier_key,
+                "tier_label": tier_label,
+                "node_name": node_name,
+                "supplier_name": record.supplier_name,
+                "country": record.country or "Unknown",
+                "latitude": record.Lat,
+                "longitude": record.Lon,
+            }
+        )
+
+    component_suppliers = (
+        ComponentSupplier.objects.select_related("component")
+        .filter(component__isnull=False)
+        .order_by("component__component_name", "supplier_name")
+    )
+    for record in component_suppliers:
+        _append_supplier_row(
+            record=record,
+            tier_key="tier1",
+            tier_label="Tier 1 - Component",
+            node_name=record.component.component_name,
+        )
+
+    part_suppliers = (
+        PartSupplier.objects.select_related("part")
+        .filter(part__isnull=False)
+        .order_by("part__part_name", "supplier_name")
+    )
+    for record in part_suppliers:
+        _append_supplier_row(
+            record=record,
+            tier_key="tier2",
+            tier_label="Tier 2 - Part",
+            node_name=record.part.part_name,
+        )
+
+    material_suppliers = (
+        MaterialSupplier.objects.select_related("material")
+        .filter(material__isnull=False)
+        .order_by("material__material_name", "supplier_name")
+    )
+    for record in material_suppliers:
+        _append_supplier_row(
+            record=record,
+            tier_key="tier3",
+            tier_label="Tier 3 - Raw Material",
+            node_name=record.material.material_name,
+        )
+
+    supplier_rows.sort(
+        key=lambda row: (
+            tier_order.get(row["tier_key"], 99),
+            row["node_name"],
+            row["supplier_name"],
+        )
+    )
+
+    map_points = [
+        {
+            "tier_key": row["tier_key"],
+            "tier_label": row["tier_label"],
+            "node_name": row["node_name"],
+            "supplier_name": row["supplier_name"],
+            "country": row["country"],
+            "latitude": row["latitude"],
+            "longitude": row["longitude"],
+        }
+        for row in supplier_rows
+        if row["latitude"] is not None and row["longitude"] is not None
+    ]
+
+    program_name = "Next-Generation Vessel Program"
+    system_name = "NextGen Vessel Platform"
+    try:
+        nodes_df, _ = load_case_study_csvs(_repo_root())
+        program_rows = nodes_df[nodes_df["node_type"] == "program"]
+        system_rows = nodes_df[nodes_df["node_type"] == "system"]
+        if not program_rows.empty:
+            value = str(program_rows.iloc[0].get("name") or "").strip()
+            if value:
+                program_name = value
+        if not system_rows.empty:
+            value = str(system_rows.iloc[0].get("name") or "").strip()
+            if value:
+                system_name = value
+    except Exception:
+        pass
+
+    current_case = Case_system.objects.order_by("id").first()
+    if current_case and current_case.case_name:
+        system_name = current_case.case_name
 
     context = {
-        "uploaded_parts": uploaded_parts,
-        "selected_part_id": selected_part_id,
-        "suppliers": suppliers,
+        "supplier_rows": supplier_rows,
+        "supplier_map_points": map_points,
+        "tier_filter_options": [
+            {"value": "", "label": "All Suppliers"},
+            {"value": "tier1", "label": "Tier-1 Components"},
+            {"value": "tier2", "label": "Tier-2 Part Suppliers"},
+            {"value": "tier3", "label": "Tier-3 Raw Material Suppliers"},
+        ],
+        "program_name": program_name,
+        "system_name": system_name,
     }
 
     return HttpResponse(template.render(context, request))
@@ -557,205 +687,51 @@ def generate_plan(request):
     """
     Generate a production plan by selecting suppliers for the different system nodes.
     """
+    try:
+        _, _, schedule_tree, supplier_options = build_case_study_graph_model()
+    except FileNotFoundError as exc:
+        return JsonResponse({"status": "error", "message": f"Missing case-study CSV file: {exc}"})
+    except Exception as exc:
+        return JsonResponse({"status": "error", "message": f"Failed to build NetworkX model: {exc}"})
 
-    ############# Upload data #######################
-    uploaded_case_systems = Case_system.objects.all()
-    uploaded_components = Component.objects.all()
-    uploaded_material_suppliers = MaterialSupplier.objects.all()
-    uploaded_parts = Part.objects.all()
-    uploaded_part_suppliers = PartSupplier.objects.all()
-    uploaded_materials = Material.objects.all()
-    uploaded_material_suppliers = MaterialSupplier.objects.all()
+    selected_production_chain = select_suppliers_for_tree(
+        schedule_tree,
+        supplier_options=supplier_options,
+    )
+    request.session["selected_production_chain"] = json.dumps(selected_production_chain)
+    request.session["plan_generated_at"] = datetime.now().isoformat()
 
-    ############## Populate the supply chain tree structure #######################
-    # Define root node (system)
-    if uploaded_case_systems.exists():
-        case = uploaded_case_systems.first()
-        vessel_system = Node("vessel", "system",{},0)
+    selected_plan_tree = build_selected_plan_tree(schedule_tree, selected_production_chain)
 
-    # define component nodes
-    ls_components = []
-    for comp in uploaded_components:
-        if comp.case_system == case:
-            # determine the list of suppliers for this component
-            comp_suppliers = ComponentSupplier.objects.filter(component=comp)
-            ls_suppliers = {}
-            for sup in comp_suppliers:
-                ls_suppliers[sup.supplier_name] = {
-                    "Lat": sup.Lat,
-                    "Lon": sup.Lon,
-                    "country": sup.country
-                }
-            # add to the components list
-            ls_components.append(Node(comp.component_name, "component",ls_suppliers,None,0))
-
-    # define part nodes and raw material nodes
-    ls_parts = []
-    for part in uploaded_parts:
-        if part.component in uploaded_components:
-            # determine the list of suppliers for this part
-            part_suppliers = PartSupplier.objects.filter(part=part)
-            ls_suppliers = {}
-            for sup in part_suppliers:
-                ls_suppliers[sup.supplier_name] = {
-                    "Lat": sup.Lat,
-                    "Lon": sup.Lon,
-                    "country": sup.country,
-                    "NAIC_code": sup.NAIC_code,
-                    "HS_code": sup.HS_code,
-                    "production_time_days": sup.production_time_days,
-                    "shipping_time_days": sup.shipping_time_days
-                }
-            # add to the components list
-            part_node = Node(part.part_name, "part",ls_suppliers,part.date_req,part.quantity)
-            
-            # add raw materials as children of the part
-            materials = Material.objects.filter(part=part)
-            for mat in materials:
-                # determine the list of suppliers for this material
-                mat_suppliers = MaterialSupplier.objects.filter(material=mat)
-                ls_suppliers = {}
-                for sup in mat_suppliers:
-                    ls_suppliers[sup.supplier_name] = {
-                        "Lat": sup.Lat,
-                        "Lon": sup.Lon,
-                        "country": sup.country,
-                        "NAIC_code": sup.NAIC_code,
-                        "HS_code": sup.HS_code,
-                        "production_time_days": sup.production_time_days,
-                        "shipping_time_days": sup.shipping_time_days
-                    }
-                mat_node = Node(mat.material_name, "raw_material",ls_suppliers,mat.date_req,mat.quantity)
-                part_node.add_child(mat_node)
-                
-            # add the part node to the corresponding component
-            for comp_node in ls_components:
-                if comp_node.name == part.component.component_name:
-                    comp_node.add_child(part_node)
-
-    # add children to the root noded
-    for comp in ls_components:
-        if comp.children:  # only add components that have parts
-            vessel_system.add_child(comp)
-    ####################################################################################
-
-    # print('--------------------------')
-    # print_tree(vessel_system)
-    # print('--------------------------')
-
-    selected_production_chain = select_random_suppliers(vessel_system)
-    request.session['selected_production_chain'] = json.dumps(selected_production_chain)
-    selected_plan_tree = build_selected_plan_tree(vessel_system, selected_production_chain)
-    #print('Selected production chain:',selected_production_chain)
-
-    return JsonResponse({
-        "status": "success",
-        "plan": selected_production_chain,
-        "plan_tree": selected_plan_tree
-    })
+    return JsonResponse(
+        {
+            "status": "success",
+            "plan": selected_production_chain,
+            "plan_tree": selected_plan_tree,
+        }
+    )
 
 def simulate_plan(request):
     """
     Simulate the generated production plan by analyzing risks for each supplier.
     """   
-    
-    # Retrieve from session and deserialize
-    selected_chain_json = request.session.get('selected_production_chain')
-    print('Selected production plan from session:',selected_chain_json)
+
+    selected_chain_json = request.session.get("selected_production_chain")
     if not selected_chain_json:
         return JsonResponse({"status": "error", "message": "No production plan found in session."})
 
     selected_production_chain = json.loads(selected_chain_json)
 
-    ############## Populate the supply chain tree structure #######################
-    uploaded_case_systems = Case_system.objects.all()
-    uploaded_components = Component.objects.all()
-    uploaded_material_suppliers = MaterialSupplier.objects.all()
-    uploaded_parts = Part.objects.all()
-    uploaded_part_suppliers = PartSupplier.objects.all()
-    uploaded_materials = Material.objects.all()
-    uploaded_material_suppliers = MaterialSupplier.objects.all()
-    # Define root node (system)
-    if uploaded_case_systems.exists():
-        case = uploaded_case_systems.first()
-        vessel_system = Node("vessel", "system",{},0)
+    try:
+        _, _, schedule_tree, _ = build_case_study_graph_model()
+    except FileNotFoundError as exc:
+        return JsonResponse({"status": "error", "message": f"Missing case-study CSV file: {exc}"})
+    except Exception as exc:
+        return JsonResponse({"status": "error", "message": f"Failed to build NetworkX model: {exc}"})
 
-    # define component nodes
-    ls_components = []
-    for comp in uploaded_components:
-        if comp.case_system == case:
-            # determine the list of suppliers for this component
-            comp_suppliers = ComponentSupplier.objects.filter(component=comp)
-            ls_suppliers = {}
-            for sup in comp_suppliers:
-                ls_suppliers[sup.supplier_name] = {
-                    "Lat": sup.Lat,
-                    "Lon": sup.Lon,
-                    "country": sup.country
-                }
-            # add to the components list
-            ls_components.append(Node(comp.component_name, "component",ls_suppliers,None,0))
+    calculated_risk_scores = scan_risk_for_tree(schedule_tree, selected_production_chain)
 
-    # define part nodes and raw material nodes
-    ls_parts = []
-    for part in uploaded_parts:
-        if part.component in uploaded_components:
-            # determine the list of suppliers for this part
-            part_suppliers = PartSupplier.objects.filter(part=part)
-            ls_suppliers = {}
-            for sup in part_suppliers:
-                ls_suppliers[sup.supplier_name] = {
-                    "Lat": sup.Lat,
-                    "Lon": sup.Lon,
-                    "country": sup.country,
-                    "NAIC_code": sup.NAIC_code,
-                    "HS_code": sup.HS_code,
-                    "production_time_days": sup.production_time_days,
-                    "shipping_time_days": sup.shipping_time_days
-                }
-            # add to the components list
-            part_node = Node(part.part_name, "part",ls_suppliers,part.date_req,part.quantity)
-            
-            # add raw materials as children of the part
-            materials = Material.objects.filter(part=part)
-            for mat in materials:
-                # determine the list of suppliers for this material
-                mat_suppliers = MaterialSupplier.objects.filter(material=mat)
-                ls_suppliers = {}
-                for sup in mat_suppliers:
-                    ls_suppliers[sup.supplier_name] = {
-                        "Lat": sup.Lat,
-                        "Lon": sup.Lon,
-                        "country": sup.country,
-                        "NAIC_code": sup.NAIC_code,
-                        "HS_code": sup.HS_code,
-                        "production_time_days": sup.production_time_days,
-                        "shipping_time_days": sup.shipping_time_days
-                    }
-                mat_node = Node(mat.material_name, "raw_material",ls_suppliers,mat.date_req,mat.quantity)
-                part_node.add_child(mat_node)
-                
-            # add the part node to the corresponding component
-            for comp_node in ls_components:
-                if comp_node.name == part.component.component_name:
-                    comp_node.add_child(part_node)
-
-    # add children to the root noded
-    for comp in ls_components:
-        if comp.children:  # only add components that have parts
-            vessel_system.add_child(comp)
-    ####################################################################################
-
-    # Scan over the production chain and analyze risk for each supplier
-    calculated_risk_scores = scan_risk_for_nodes(vessel_system,selected_production_chain)
-    print('--------------------------')
-    print('RISK analysis for the production chain')
-    print(calculated_risk_scores)
-    print('--------------------------')
-
-    risk_dict= {'risk_scores': 0,'delays':0,'summary':0}   
-
-    return JsonResponse({"status": "success", "riskScores": risk_dict})
+    return JsonResponse({"status": "success", "risk_scores": calculated_risk_scores})
 
 # def run_simulation(request):
 #     template = loader.get_template("mainDash/run_simulation.html")
@@ -901,6 +877,73 @@ def get_suppliers_for_part(request, part_id):
         return JsonResponse({"success": False, "error": "Part not found."})
     
 def scan_analysis(request):
+    pair_key = request.GET.get("pair_key", "").strip()
+    if pair_key:
+        selected_pair = _resolve_physical_pair(pair_key)
+        if not selected_pair:
+            return JsonResponse(
+                {"status": "error", "message": "Invalid node and supplier selection."},
+                status=400,
+            )
+
+        part_to_search = selected_pair["node_name"]
+        selected_supplier_name = selected_pair["supplier_name"]
+
+        try:
+            all_cve_data = []
+            part_valid_cpes = get_valid_cpes_for_component(part_to_search)
+            print("\n✅ Valid CPEs (from NVD):")
+            for cpe in part_valid_cpes:
+                print(f"- {cpe}")
+
+            for cpe in part_valid_cpes:
+                print(f"Querying CVEs for {cpe}...")
+                cve_results = get_cves_for_cpe(cpe)
+                if not cve_results:
+                    print("⚠️ No results, skipping...")
+                all_cve_data.extend(cve_results)
+                time.sleep(0.6)
+
+            if len(all_cve_data) > 0:
+                result = {
+                    "status": "ok",
+                    "message": (
+                        f"Found {len(all_cve_data)} CVEs for "
+                        f"{selected_pair['node_type'].lower()} '{part_to_search}'"
+                    ),
+                    "node_type": selected_pair["node_type"],
+                    "node_name": part_to_search,
+                    "supplier_name": selected_supplier_name,
+                    "cve_data": all_cve_data,
+                    "CVE IDs": [entry["cve_id"] for entry in all_cve_data],
+                    "Severities": [entry["severity"] for entry in all_cve_data],
+                    "Scores": [entry["score"] for entry in all_cve_data],
+                    "Descriptions": [entry["description"] for entry in all_cve_data],
+                }
+            else:
+                result = {
+                    "status": "ok",
+                    "message": (
+                        f"No CVEs found for {selected_pair['node_type'].lower()} "
+                        f"'{part_to_search}'"
+                    ),
+                    "node_type": selected_pair["node_type"],
+                    "node_name": part_to_search,
+                    "supplier_name": selected_supplier_name,
+                    "cve_data": [],
+                    "CVE IDs": [],
+                    "Severities": [],
+                    "Scores": [],
+                    "Descriptions": [],
+                }
+
+            return JsonResponse(result)
+        except Exception as exc:
+            return JsonResponse(
+                {"status": "error", "message": f"Cyber scan failed: {exc}"},
+                status=500,
+            )
+
     component_id = request.GET.get("component_id")
     supplier_id = request.GET.get("supplier_id")
 
@@ -983,33 +1026,205 @@ def get_dropdown_data(request):
     })
 
 
-def scan_cyber_layer(request):
-    template = loader.get_template("mainDash/scan_cyber_layer.html")
-    
-    # Uplaoad data to show in the drowpdown select
-    components = Component.objects.all()
-    Parts = Part.objects.all()
-    PartSuppliers = PartSupplier.objects.all()
-    materials = Material.objects.all()
-    MaterialsSupplier= MaterialSupplier.objects.all()
+def _build_physical_node_supplier_groups():
+    component_pairs = []
+    part_pairs = []
+    material_pairs = []
 
-    # Pass the data to the template context
+    component_suppliers = (
+        ComponentSupplier.objects.select_related("component")
+        .filter(component__isnull=False)
+        .order_by("component__component_name", "supplier_name")
+    )
+    for supplier in component_suppliers:
+        component_pairs.append(
+            {
+                "pair_key": f"component:{supplier.id}",
+                "node_type": "Component",
+                "node_name": supplier.component.component_name,
+                "supplier_name": supplier.supplier_name,
+            }
+        )
+
+    part_suppliers = (
+        PartSupplier.objects.select_related("part")
+        .filter(part__isnull=False)
+        .order_by("part__part_name", "supplier_name")
+    )
+    for supplier in part_suppliers:
+        part_pairs.append(
+            {
+                "pair_key": f"part:{supplier.id}",
+                "node_type": "Part",
+                "node_name": supplier.part.part_name,
+                "supplier_name": supplier.supplier_name,
+            }
+        )
+
+    material_suppliers = (
+        MaterialSupplier.objects.select_related("material")
+        .filter(material__isnull=False)
+        .order_by("material__material_name", "supplier_name")
+    )
+    for supplier in material_suppliers:
+        material_pairs.append(
+            {
+                "pair_key": f"material:{supplier.id}",
+                "node_type": "Material",
+                "node_name": supplier.material.material_name,
+                "supplier_name": supplier.supplier_name,
+            }
+        )
+
+    return {
+        "component_pairs": component_pairs,
+        "part_pairs": part_pairs,
+        "material_pairs": material_pairs,
+    }
+
+
+def _resolve_physical_pair(pair_key):
+    if ":" not in pair_key:
+        return None
+
+    pair_type, record_id = pair_key.split(":", 1)
+    if not record_id.isdigit():
+        return None
+
+    selected_id = int(record_id)
+
+    if pair_type == "component":
+        record = (
+            ComponentSupplier.objects.select_related("component")
+            .filter(id=selected_id, component__isnull=False)
+            .first()
+        )
+        if not record:
+            return None
+        return {
+            "node_type": "Component",
+            "node_name": record.component.component_name,
+            "supplier_name": record.supplier_name,
+            "supplier_lat": record.Lat,
+            "supplier_lon": record.Lon,
+        }
+
+    if pair_type == "part":
+        record = (
+            PartSupplier.objects.select_related("part")
+            .filter(id=selected_id, part__isnull=False)
+            .first()
+        )
+        if not record:
+            return None
+        return {
+            "node_type": "Part",
+            "node_name": record.part.part_name,
+            "supplier_name": record.supplier_name,
+            "supplier_lat": record.Lat,
+            "supplier_lon": record.Lon,
+        }
+
+    if pair_type == "material":
+        record = (
+            MaterialSupplier.objects.select_related("material")
+            .filter(id=selected_id, material__isnull=False)
+            .first()
+        )
+        if not record:
+            return None
+        return {
+            "node_type": "Material",
+            "node_name": record.material.material_name,
+            "supplier_name": record.supplier_name,
+            "supplier_lat": record.Lat,
+            "supplier_lon": record.Lon,
+        }
+
+    return None
+
+
+def scan_cyber_layer(request):
+    grouped_pairs = _build_physical_node_supplier_groups()
+    cyber_pairs = grouped_pairs["part_pairs"] + grouped_pairs["material_pairs"]
     context = {
-        "components": components,
-        "parts": Parts,
-        "part_suppliers": PartSuppliers,
-        "materials": materials,
-        "material_suppliers": MaterialsSupplier,
+        "part_pairs": grouped_pairs["part_pairs"],
+        "material_pairs": grouped_pairs["material_pairs"],
+        "total_pairs": len(cyber_pairs),
     }
 
     return render(request, "mainDash/scan_cyber_layer.html", context)
 
 def scan_supply_chain(request):
-    template = loader.get_template("mainDash/supply_chain_analysis.html")
-    context = {}
-    return HttpResponse(template.render(context, request))
+    grouped_pairs = _build_physical_node_supplier_groups()
+    total_pairs = (
+        len(grouped_pairs["component_pairs"])
+        + len(grouped_pairs["part_pairs"])
+        + len(grouped_pairs["material_pairs"])
+    )
+    context = {
+        **grouped_pairs,
+        "total_pairs": total_pairs,
+    }
+    return render(request, "mainDash/supply_chain_analysis.html", context)
 
 def perform_analysis_view(request):
+    pair_key = request.GET.get("pair_key", "").strip()
+    if pair_key:
+        selected_pair = _resolve_physical_pair(pair_key)
+        if not selected_pair:
+            return JsonResponse(
+                {"status": "error", "message": "Invalid node and supplier selection."},
+                status=400,
+            )
+
+        try:
+            scan_details = analyze_supplier_risk_from_news_workflow(
+                selected_pair["supplier_name"],
+                selected_pair["supplier_lat"],
+                selected_pair["supplier_lon"],
+                return_details=True,
+            )
+            risk_score = _safe_float(scan_details.get("risk_score"), 0.0)
+            risk_level = _risk_level_from_score(risk_score)
+        except Exception as exc:
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": (
+                        f"Unable to perform analysis for selected pair "
+                        f"{selected_pair['node_name']} / {selected_pair['supplier_name']}: {exc}"
+                    ),
+                },
+                status=500,
+            )
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "node_type": selected_pair["node_type"],
+                "node_name": selected_pair["node_name"],
+                "supplier_name": selected_pair["supplier_name"],
+                "risk_score": risk_score,
+                "risk_level": risk_level,
+                "message": (
+                    f"Risk score calculated for {selected_pair['node_name']} "
+                    f"and {selected_pair['supplier_name']}."
+                ),
+                "supplierInfo": {
+                    "lat": selected_pair["supplier_lat"],
+                    "lon": selected_pair["supplier_lon"],
+                },
+                "scan_details": {
+                    "scanned_location": str(scan_details.get("scanned_location") or "Unknown"),
+                    "articles_count": _safe_int(scan_details.get("articles_count"), 0),
+                    "events_in_window": _safe_int(scan_details.get("events_in_window"), 0),
+                    "events_in_radius": _safe_int(scan_details.get("events_in_radius"), 0),
+                    "radius_miles": _safe_float(scan_details.get("radius_miles"), 50.0),
+                },
+            }
+        )
+
     # Example logic for analysis
     scenario = request.GET.get('scenario', None)
 
@@ -1339,268 +1554,222 @@ def upload_material_data(request):
 
     return render(request, 'mainDash/upload_csv.html', {'form': form, 'form_title': 'Upload Material Data'})
 
-def load_project(request):
-    if request.method == 'POST':
-        form = CSVUploadFormBOM(request.POST, request.FILES)
 
-        if form.is_valid():
-            csv_file = request.FILES['csv_file']
+###################################################################################################################
+##### Rebuilds your entire vessel case-study dataset inside  Django database from CSV-derived DataFrames ##########
+###################################################################################################################
+@transaction.atomic
+def _load_case_study_into_database():
+    nodes_df, edges_df, _, supplier_options = build_case_study_graph_model()
 
-            # read into data frame
-            df = pd.read_csv(TextIOWrapper(csv_file, encoding='utf-8'))
+    # Rebuild case-study data deterministically from CSV source files.
+    MaterialSupplier.objects.all().delete()
+    PartSupplier.objects.all().delete()
+    ComponentSupplier.objects.all().delete()
+    Material.objects.all().delete()
+    Part.objects.all().delete()
+    Component.objects.all().delete()
+    Case_system.objects.all().delete()
 
-            # Add new system object if it does not exist
-            system_name = "Vessel_System"
-            system_obj, _ = Case_system.objects.get_or_create(
-                case_name=system_name,
-                case_description="System for Vessel Case Study",
-                date_created=datetime.now()
+    system_rows = nodes_df[nodes_df["node_type"] == "system"]
+    if system_rows.empty:
+        raise ValueError("No system node found in nodes CSV.")
+
+    system_row = system_rows.iloc[0]
+    system_node_id = str(system_row["node_id"])
+    system_name = str(system_row.get("name") or "Vessel System")
+    system_case = Case_system.objects.create(
+        case_name=system_name,
+        case_description="Loaded from SC_data_generator vessel case-study CSV files.",
+        system_node_id=system_node_id,
+    )
+
+    assembly_edges = edges_df[edges_df["edge_type"] == "assembly_dependency"][
+        ["src", "dst", "qty_per_parent"]
+    ]
+    material_edges = edges_df[edges_df["edge_type"] == "material_input"][
+        ["src", "dst", "qty_per_parent"]
+    ]
+
+    part_parent_lookup = {}
+    for _, row in assembly_edges.iterrows():
+        part_parent_lookup[str(row["src"])] = {
+            "component_node_id": str(row["dst"]),
+            "quantity": max(1, _safe_int(row.get("qty_per_parent"), 1)),
+        }
+
+    material_parent_lookup = {}
+    for _, row in material_edges.iterrows():
+        material_parent_lookup[str(row["src"])] = {
+            "part_node_id": str(row["dst"]),
+            "quantity": max(1, _safe_int(row.get("qty_per_parent"), 1)),
+        }
+
+    components_by_node_id = {}
+    component_rows = nodes_df[nodes_df["node_type"] == "component"].sort_values("name")
+    for _, row in component_rows.iterrows():
+        node_id = str(row["node_id"])
+        component = Component.objects.create(
+            node_id=node_id,
+            component_name=str(row.get("name") or node_id),
+            component_description=f"Loaded from node {node_id}",
+            case_system=system_case,
+        )
+        components_by_node_id[node_id] = component
+
+    parts_by_node_id = {}
+    part_rows = nodes_df[nodes_df["node_type"] == "part"].sort_values("name")
+    for _, row in part_rows.iterrows():
+        part_node_id = str(row["node_id"])
+        parent_info = part_parent_lookup.get(part_node_id)
+        if not parent_info:
+            continue
+        component = components_by_node_id.get(parent_info["component_node_id"])
+        if not component:
+            continue
+
+        part = Part.objects.create(
+            node_id=part_node_id,
+            part_name=str(row.get("name") or part_node_id),
+            part_description=f"Loaded from node {part_node_id}",
+            part_number=part_node_id,
+            component=component,
+            date_req=_parse_optional_datetime(row.get("need_by_date")) or datetime.now(),
+            criticality=max(0, _safe_int(_safe_float(row.get("criticality"), 0) * 100)),
+            quantity=max(1, parent_info["quantity"]),
+            NAIC_code="",
+            HS_code="",
+        )
+        parts_by_node_id[part_node_id] = part
+
+    materials_by_node_id = {}
+    material_rows = nodes_df[nodes_df["node_type"] == "raw_material"].sort_values("name")
+    for _, row in material_rows.iterrows():
+        material_node_id = str(row["node_id"])
+        parent_info = material_parent_lookup.get(material_node_id)
+        if not parent_info:
+            continue
+        part = parts_by_node_id.get(parent_info["part_node_id"])
+        if not part:
+            continue
+
+        material = Material.objects.create(
+            node_id=material_node_id,
+            material_name=str(row.get("name") or material_node_id),
+            material_description=f"Loaded from node {material_node_id}",
+            part=part,
+            quantity=max(1, parent_info["quantity"]),
+            date_req=_parse_optional_datetime(row.get("need_by_date")) or datetime.now(),
+            criticality=max(0, _safe_int(_safe_float(row.get("criticality"), 0) * 100)),
+        )
+        materials_by_node_id[material_node_id] = material
+
+    component_supplier_count = 0
+    part_supplier_count = 0
+    material_supplier_count = 0
+
+    for component_node_id, component in components_by_node_id.items():
+        for supplier in supplier_options.get(component_node_id, []):
+            ComponentSupplier.objects.create(
+                component=component,
+                supplier_node_id=str(supplier.get("supplier_node_id") or ""),
+                edge_type=str(supplier.get("edge_type") or ""),
+                is_selected=_safe_bool(supplier.get("is_selected")),
+                supplier_name=str(supplier.get("supplier_name") or "Unknown"),
+                Lat=_safe_float(supplier.get("Lat"), 0.0),
+                Lon=_safe_float(supplier.get("Lon"), 0.0),
+                country=str(supplier.get("country") or ""),
+                NAIC_code="",
+                HS_code="",
+                production_time_days=max(0, _safe_int(supplier.get("production_time_days"), 0)),
+                shipping_time_days=max(0, _safe_int(supplier.get("shipping_time_days"), 0)),
             )
+            component_supplier_count += 1
 
-            # Loop over DataFrame rows
-            for _, row in df.iterrows():
-                tier = row['tier'].strip()
+    for part_node_id, part in parts_by_node_id.items():
+        for supplier in supplier_options.get(part_node_id, []):
+            PartSupplier.objects.create(
+                part=part,
+                supplier_node_id=str(supplier.get("supplier_node_id") or ""),
+                edge_type=str(supplier.get("edge_type") or ""),
+                is_selected=_safe_bool(supplier.get("is_selected")),
+                supplier_name=str(supplier.get("supplier_name") or "Unknown"),
+                Lat=_safe_float(supplier.get("Lat"), 0.0),
+                Lon=_safe_float(supplier.get("Lon"), 0.0),
+                country=str(supplier.get("country") or ""),
+                quality=0,
+                delay_risk=max(0, _safe_int(supplier.get("delay_risk"), 0)),
+                NAIC_code="",
+                HS_code="",
+                production_time_days=max(0, _safe_int(supplier.get("production_time_days"), 0)),
+                shipping_time_days=max(0, _safe_int(supplier.get("shipping_time_days"), 0)),
+            )
+            part_supplier_count += 1
 
-                print('tier:', tier)
-                print(row)
-                print('-------------------')
+    for material_node_id, material in materials_by_node_id.items():
+        for supplier in supplier_options.get(material_node_id, []):
+            MaterialSupplier.objects.create(
+                material=material,
+                supplier_node_id=str(supplier.get("supplier_node_id") or ""),
+                edge_type=str(supplier.get("edge_type") or ""),
+                is_selected=_safe_bool(supplier.get("is_selected")),
+                supplier_name=str(supplier.get("supplier_name") or "Unknown"),
+                Lat=_safe_float(supplier.get("Lat"), 0.0),
+                Lon=_safe_float(supplier.get("Lon"), 0.0),
+                country=str(supplier.get("country") or ""),
+                quality=0,
+                delay_risk=max(0, _safe_int(supplier.get("delay_risk"), 0)),
+                NAIC_code="",
+                HS_code="",
+                production_time_days=max(0, _safe_int(supplier.get("production_time_days"), 0)),
+                shipping_time_days=max(0, _safe_int(supplier.get("shipping_time_days"), 0)),
+            )
+            material_supplier_count += 1
 
-                if tier == 'Component':
-                    component_name = row['component'].strip()
-                    supplied_item = row['supplied_item'].strip()
-                    supplier_name = row['supplier_name'].strip()
-                    supplier_country = row['supplier_country'].strip()
-                    supplier_lat = row['supplier_lat']
-                    supplier_lon = row['supplier_lon']
-                    Production_Lead_Time_Days = int(row['Production_Lead_Time_Days'])
-                    Transportation_Time_Days= int(row['Transportation_Time_Days'])
-                    component_quantity = int(row['component_quantity'])
-                    # Parse date from MM/DD/YY to YYYY-MM-DD
-                    try:
-                        #component_due_date = datetime.strptime(row['component_due_date'], "%m/%d/%y")
-                        component_due_date = datetime.strptime(row['component_due_date'], "%Y-%m-%d")
-                        
-                    except ValueError:
-                        component_due_date = None  # or handle error as needed
+    return [
+        ["status", "Loaded vessel case-study data from SC_data_generator"],
+        ["nodes_csv", "__vessel_nodes_realistic_case_study_with_dates.csv"],
+        ["edges_csv", "__vessel_edges_case_study.csv"],
+        ["systems", str(1)],
+        ["components", str(len(components_by_node_id))],
+        ["parts", str(len(parts_by_node_id))],
+        ["materials", str(len(materials_by_node_id))],
+        ["component_suppliers", str(component_supplier_count)],
+        ["part_suppliers", str(part_supplier_count)],
+        ["material_suppliers", str(material_supplier_count)],
+    ]
 
-                    # If component aready exists, skip to next row
-                    try:
-                        existing_component = Component.objects.get(component_name=component_name)
-                        print(f"Component {component_name} already exists. Skipping.")
-                        continue  # Skip to the next row
-                    except Component.DoesNotExist:
-                        existing_component = None
-                        pass  # Component does not exist, proceed to create it
 
-                    if existing_component:
-                        ## just add the current supplier ##
-                        print(f"Adding supplier {supplier_name} for existing component {component_name}.")
-                        supplier_obj, _ = ComponentSupplier.objects.get_or_create( 
-                            component = existing_component,
-                            supplier_name = supplier_name,
-                            Lat = supplier_lat,
-                            Lon = supplier_lon,
-                            country = supplier_country,
-                            production_time_days = Production_Lead_Time_Days,
-                            shipping_time_days = Transportation_Time_Days,
-                            NAIC_code = "",  # Assuming NAIC code is not provided in the CSV
-                            HS_code = "",  # Assuming HS code is not provided in the CSV
-                            date_created = datetime.now()
-                        )   
-                    else: 
-                        ## Add new component to the database if not exists + supplier ######
-                        print(f"Creating component {component_name} and adding supplier {supplier_name}.")
-                        component_obj, _ = Component.objects.get_or_create(
-                            component_name=component_name,
-                            case_system=system_obj,
-                            component_description="Component for Vessel Case Study",
-                            date_created=datetime.now()
-                        )   
+def load_project(request):
+    if request.method not in {"GET", "POST"}:
+        return JsonResponse({"status": "error", "message": "Unsupported request method."}, status=405)
 
-                        supplier_obj, _ = ComponentSupplier.objects.get_or_create( 
-                            component = component_obj,
-                            supplier_name = supplier_name,
-                            Lat = supplier_lat,
-                            Lon = supplier_lon,
-                            production_time_days = Production_Lead_Time_Days,
-                            shipping_time_days = Transportation_Time_Days,
-                            country = supplier_country,
-                            NAIC_code = "",  # Assuming NAIC code is not provided in the CSV
-                            HS_code = "",  # Assuming HS code is not provided in the CSV
-                            date_created = datetime.now()
-                        )   
-                elif tier == 'Part':
-                    component_name = row['component'].strip()
-                    part_name = row['part'].strip()
-                    supplied_item = row['supplied_item'].strip()
-                    supplier_name = row['supplier_name'].strip()
-                    supplier_country = row['supplier_country'].strip()
-                    supplier_lat = row['supplier_lat']
-                    supplier_lon = row['supplier_lon']
-                    Production_Lead_Time_Days = int(row['Production_Lead_Time_Days'])
-                    Transportation_Time_Days= int(row['Transportation_Time_Days'])
-                    part_quantity = int(row['part_quantity'])
-                    # Parse date from MM/DD/YY to YYYY-MM-DD
-                    try:
-                        part_due_date_ = datetime.strptime(row['part_due_date'], "%m/%d/%y")
-                        #part_due_date_ = datetime.strptime(row['part_due_date'], "%Y-%m-%d")
-                    except ValueError:
-                        part_due_date_ = None  # or handle error as needed
+    try:
+        summary_rows = _load_case_study_into_database()
+    except FileNotFoundError as exc:
+        return render(
+            request,
+            "mainDash/uploaded_data.html",
+            {"data": [["error", f"Missing case-study CSV file: {exc}"]]},
+            status=400,
+        )
+    except Exception as exc:
+        return render(
+            request,
+            "mainDash/uploaded_data.html",
+            {"data": [["error", f"Failed to load case-study data: {exc}"]]},
+            status=500,
+        )
 
-                    # If part already exists, skip to next row
-                    try:
-                        existing_part = Part.objects.get(part_name=part_name)
-                        print(f"Part {part_name} already exists. Skipping.")
-                        continue  # Skip to the next row
-                    except Part.DoesNotExist:
-                        existing_part = None
-                        pass  # Part does not exist, proceed to create it  
-                        
+    return render(request, "mainDash/uploaded_data.html", {"data": summary_rows})
 
-                    if existing_part:
-                        ## just add the current supplier ##
-                        supplier_obj, _ = PartSupplier.objects.get_or_create( 
-                            part = existing_part,
-                            supplier_name = supplier_name,
-                            Lat = supplier_lat,
-                            Lon = supplier_lon,
-                            country = supplier_country,
-                            quality = 0,
-                            delay_risk = 0,
-                            production_time_days = Production_Lead_Time_Days,
-                            shipping_time_days = Transportation_Time_Days,
-                            NAIC_code = "",  # Assuming NAIC code is not provided in the CSV
-                            HS_code = "",  # Assuming HS code is not provided in the CSV
-                            date_created = datetime.now(),
-                        )
-                    else: 
-                        # Find component object
-                        try:
-                            component_obj = Component.objects.get(component_name=component_name)
-                        except Component.DoesNotExist:
-                            component_obj = None        
 
-                        # Create a new part and its supplier
-                        if component_obj:
-                            print(f"Creating part {part_name} under component {component_name}.")
-                            new_part = Part(
-                                part_number = "",
-                                component = component_obj,
-                                part_name = part_name,
-                                part_description = "part for Vessel Case Study",
-                                quantity = part_quantity,
-                                criticality = 0,
-                                NAIC_code = "",
-                                date_req = part_due_date_,
-                                HS_code = "",
-                                date_created = datetime.now()
-                            )
-                            # Save the new instance to the database
-                            new_part.save()
+def generate_data(request):
+    return load_project(request)
+    
 
-                            supplier_obj, _ = PartSupplier.objects.get_or_create( 
-                                part = new_part,
-                                supplier_name = supplier_name,
-                                Lat = supplier_lat,
-                                Lon = supplier_lon,
-                                country = supplier_country,
-                                production_time_days = Production_Lead_Time_Days,
-                                shipping_time_days = Transportation_Time_Days,
-                                NAIC_code = "",  # Assuming NAIC code is not provided in the CSV
-                                HS_code = "",  # Assuming HS code is not provided in the CSV
-                                date_created = datetime.now()
-                            )       
 
-                elif tier == 'RawMaterial':
-                    component_name = row['component'].strip()
-                    part_name = row['part'].strip()
-                    material_name= row['raw_material'].strip()
-                    supplied_item = row['supplied_item'].strip()
-                    supplier_name = row['supplier_name'].strip()
-                    supplier_country = row['supplier_country'].strip()
-                    supplier_lat = row['supplier_lat']
-                    supplier_lon = row['supplier_lon']
-                    Production_Lead_Time_Days = int(row['Production_Lead_Time_Days'])
-                    Transportation_Time_Days= int(row['Transportation_Time_Days'])
-                    material_quantity = int(row['raw_material_quantity'])
-                    # Parse date from MM/DD/YY to YYYY-MM-DD
-                    try:     
-                        material_due_date = datetime.strptime(row['raw_material_due_date'], "%m/%d/%y")
-                        #material_due_date = datetime.strptime(row['raw_material_due_date'], "%Y-%m-%d")
-                        
-                    except ValueError:     
-                        material_due_date = None  # or handle error as needed
 
-                    ## If material already exists, skip to next row ##
-                    try:
-                        existing_material = Material.objects.get(material_name=material_name)
-                        print(f"Material {material_name} already exists. Skipping.")
-                        continue  # Skip to the next row
-                    except Material.DoesNotExist:
-                        existing_material = None
-                        pass  # Material does not exist, proceed to create it
-
-                    if existing_material:
-                        ## just add the current supplier ##
-                        print(f"Adding supplier {supplier_name} for existing material {material_name}.")
-                        supplier_obj, _ = MaterialSupplier.objects.get_or_create( 
-                            material = existing_material,
-                            supplier_name = supplier_name,
-                            Lat = supplier_lat,
-                            Lon = supplier_lon,
-                            country = supplier_country,
-                            production_time_days = Production_Lead_Time_Days,
-                            shipping_time_days = Transportation_Time_Days,
-                            NAIC_code = "",  # Assuming NAIC code is not provided in the CSV
-                            HS_code = "",  # Assuming HS code is not provided in the CSV
-                            date_created = datetime.now()
-                        )
-                    else: 
-                        # Find part object
-                        try:
-                            part_obj = Part.objects.get(part_name=part_name)
-                        except Part.DoesNotExist:
-                            part_obj = None        
-
-                        # Create a new material and its supplier
-                        if part_obj:
-                            print(f"Creating material {material_name} under part {part_name}.")
-                            new_material = Material(
-                                part = part_obj,
-                                material_name = material_name,
-                                material_description = "material for Vessel Case Study",
-                                quantity = material_quantity,
-                                date_req = material_due_date,
-                                criticality = 0,
-                                date_created = datetime.now()
-                            )
-                            # Save the new instance to the database
-                            new_material.save()
-
-                            supplier_obj, _ = MaterialSupplier.objects.get_or_create( 
-                                material = new_material,
-                                supplier_name = supplier_name,
-                                Lat = supplier_lat,
-                                Lon = supplier_lon,
-                                country = supplier_country,
-                                production_time_days = Production_Lead_Time_Days,
-                                shipping_time_days = Transportation_Time_Days,
-                                NAIC_code = "",  # Assuming NAIC code is not provided in the CSV
-                                HS_code = "",  # Assuming HS code is not provided in the CSV
-                                date_created = datetime.now()
-                            )
-                        else: 
-                            print(f"Part with name {part_name} not found. Skipping material creation.") 
-                else:
-                    # If tier is not recognized, skip this row
-                    continue    
-
-            return render(request, 'mainDash/uploaded_data.html', {'data': []})
-        
-    else:
-        form = CSVUploadFormBOM()
-
-    return render(request, 'mainDash/upload_csv.html', {'form': form, 'form_title': 'Upload Material Data'})
     
 
 ########################################################################

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Supply Chain Analysis</title>
+    <title>Supply Chain Risk Intelligence Dashboard</title>
     <style>
         body, html {
             height: 100%;
@@ -52,20 +52,13 @@
             padding: 16px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
-        #scenarioSelect {
+        #nodeSupplierSelect {
             margin-top: 16px;
             padding: 10px;
             font-size: 1em;
             border-radius: 5px;
             border: 1px solid #ccc;
-            display: none;
-        }        
-        #supplierSelect {
-            margin-top: 16px;
-            padding: 10px;
-            font-size: 1em;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            min-width: 380px;
             display: none;
         }
         
@@ -96,108 +89,185 @@
 <body>
 <div class="container">
     <div class="left-box">
-        <h2 style="margin:0 0 18px 0; font-size:1.2em; color:#1976d2;">Physical Layer</h2>
-        <button onclick="showScenarios()">Scan News</button>
-        <button onclick="showResult('ports')">Scan Ports</button>
-        <button onclick="showResult('weather')">Scan Weather</button>
-        <h2 style="margin:0 0 18px 0; font-size:1.2em; color:#1976d2;">Cyber Layer</h2>
-        <a href="{% url 'scan_cyber_layer' %}" class="custom-btn">Cyber Threat </a>
+        <h2 style="margin:0 0 18px 0; font-size:1.2em; color:#1976d2;">Physical Risk Layer</h2>
+        <button onclick="showScenarios()">News Risk Scan</button>
+        <button onclick="showResult('ports')">Port Disruption Scan</button>
+        <button onclick="showResult('weather')">Weather Risk Scan</button>
+        <h2 style="margin:0 0 18px 0; font-size:1.2em; color:#1976d2;">Cyber Risk Layer</h2>
+        <a href="{% url 'scan_cyber_layer' %}" class="custom-btn">Cyber Threat Intelligence</a>
         <!-- <button onclick="scanCyberThreats()">Cyber Threats</button> -->
     </div>
     <div class="right-box">
         <div id="result" class="result-area">
-            <h2>Supply Chain Risk Analysis Dashboard</h2>
+            <h2>Supply Chain Risk Intelligence Dashboard</h2>
         </div>
-        <select id="scenarioSelect" onchange="performAnalysis()">
-                <option value="">Select a production chain</option>
-                <option value="scenario1">Production chain 1</option>
-                <option value="scenario2">Production chain 2</option>
-                <option value="scenario3">Production chain 3</option>
-        </select>
-        <select id="supplierSelect" onchange="cyberThreatAnlysisFct()">
-                <option value="">Select a supplier</option>
-                <option value="Raytheon Technologies">Raytheon Technologies</option>
+        <select id="nodeSupplierSelect" data-total-pairs="{{ total_pairs }}" onchange="performAnalysisForPair()">
+                <option value="">Select physical node and supplier</option>
+                {% if component_pairs %}
+                <optgroup label="Tier 1 Components">
+                    {% for pair in component_pairs %}
+                    <option value="{{ pair.pair_key }}">{{ pair.node_name }} -> {{ pair.supplier_name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
+                {% if part_pairs %}
+                <optgroup label="Tier 2 Parts">
+                    {% for pair in part_pairs %}
+                    <option value="{{ pair.pair_key }}">{{ pair.node_name }} -> {{ pair.supplier_name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
+                {% if material_pairs %}
+                <optgroup label="Tier 3 Materials">
+                    {% for pair in material_pairs %}
+                    <option value="{{ pair.pair_key }}">{{ pair.node_name }} -> {{ pair.supplier_name }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
         </select>
     </div>
 </div>
 <script>
 function showScenarios() {
-    document.getElementById('scenarioSelect').style.display = 'block';
-    document.getElementById('result').innerHTML = "<h2>Scan News</h2><p>Select a scenario from the dropdown below to perform an analysis.</p>";
+    const select = document.getElementById("nodeSupplierSelect");
+    const totalPairs = Number(select.dataset.totalPairs || 0);
+    select.style.display = "block";
+    select.value = "";
+    if (!totalPairs) {
+        document.getElementById("result").innerHTML =
+            "<h2>News Risk Scan</h2><p>No physical node-supplier pairs are available. Please load project data first.</p>";
+        return;
+    }
+    document.getElementById("result").innerHTML =
+        `<h2>News Risk Scan</h2><p>Select a node-supplier pair to run GDELT news risk assessment.</p><p><strong>Available pairs:</strong> ${totalPairs}</p>`;
 }
-
-// function scanCyberThreats() {
-//     // Update right box
-//     document.getElementById('supplierSelect').style.display = 'block';
-//     document.getElementById('result').innerHTML = "<h2>Scan Cyber Threats</h2><p>Select a supplier from the dropdown below to perform an analysis.</p>";
-// } 
 
 function showResult(value) {
-    document.getElementById('result').innerHTML = `<h2>${value}</h2><p>Performing analysis for ${value}...</p>`;
+    document.getElementById("nodeSupplierSelect").style.display = "none";
+    const panelTitles = {
+        ports: "Port Disruption Scan",
+        weather: "Weather Risk Scan",
+    };
+    const panelTitle = panelTitles[value] || "Risk Scan";
+    document.getElementById("result").innerHTML = `<h2>${panelTitle}</h2><p>Analysis for this module will appear here.</p>`;
 }
 
 
-// document.addEventListener("DOMContentLoaded", function() {
-//     fetch("/get_dropdown_data/")     // Django endpoint
-//         .then(response => response.json())
-//         .then(data => {
-//             const supplierSelect = document.getElementById("supplierSelect");
-//             // Populate suppliers
-//             data.suppliers.forEach(supplier => {
-//                 let opt = document.createElement("option");
-//                 opt.value = supplier.id;
-//                 opt.textContent = supplier.supplier_name;
-//                 supplierSelect.appendChild(opt);
-//             });
-//         })
-//         .catch(err => console.error("Error loading dropdown data:", err));
-// });
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
 
-// function cyberThreatAnlysisFct(){
-//     const supplier = document.getElementById('supplierSelect').value;
-//     if (supplier) {
-//         document.getElementById('result').innerHTML = `<h2>${supplier}</h2><p>Performing cyber threat analysis for ${supplier}...</p>`;
-//         fetch(`/mainDash/perform_cyber_analysis_view/?scenario=${scenario}`)
+function renderRiskSpectrum(riskScore, riskLevel) {
+    const safeRiskScore = Number.isFinite(riskScore) ? riskScore : 0;
+    const minValue = Math.min(-5, Math.floor(safeRiskScore) - 1);
+    const maxValue = Math.max(5, Math.ceil(safeRiskScore) + 1);
+    const width = 760;
+    const height = 220;
+    const left = 40;
+    const right = 32;
+    const bandTop = 86;
+    const bandHeight = 34;
+    const axisY = bandTop + bandHeight + 24;
+    const chartWidth = width - left - right;
+    const scaleX = (value) => left + ((value - minValue) / (maxValue - minValue)) * chartWidth;
 
-//     }
+    const bands = [
+        { start: minValue, end: -3, color: "#d32f2f", label: "🔴 High Risk (≤ -3)" },
+        { start: -3, end: -1, color: "#f57c00", label: "🟠 Moderate (-3 to -1)" },
+        { start: -1, end: 0, color: "#fbc02d", label: "🟡 Mild (-1 to 0)" },
+        { start: 0, end: 2, color: "#388e3c", label: "🟢 Stable (0 to +2)" },
+        { start: 2, end: maxValue, color: "#1976d2", label: "🔵 Positive (> +2)" },
+    ].filter((band) => band.end > band.start);
 
+    const bandRects = bands.map((band) => {
+        const x = scaleX(band.start);
+        const widthPx = Math.max(0, scaleX(band.end) - x);
+        return `<rect x="${x}" y="${bandTop}" width="${widthPx}" height="${bandHeight}" fill="${band.color}" opacity="0.92"></rect>`;
+    }).join("");
 
-// }
+    const scoreX = scaleX(Math.max(minValue, Math.min(maxValue, safeRiskScore)));
+    const ticks = [minValue, -3, -1, 0, 2, maxValue]
+        .filter((value, index, array) => array.indexOf(value) === index)
+        .sort((a, b) => a - b);
+    const tickMarks = ticks.map((tick) => `
+        <line x1="${scaleX(tick)}" y1="${axisY - 8}" x2="${scaleX(tick)}" y2="${axisY + 8}" stroke="#4a4a4a" stroke-width="1.5"></line>
+        <text x="${scaleX(tick) - 12}" y="${axisY + 28}" font-size="12" fill="#2b2b2b">${tick}</text>
+    `).join("");
+    const levelEmoji = (riskLevel && riskLevel.emoji) ? riskLevel.emoji : "";
+    const levelLabel = (riskLevel && riskLevel.label) ? riskLevel.label : "Unknown";
+    const levelRange = (riskLevel && riskLevel.range) ? riskLevel.range : "";
+    const levelText = `${levelEmoji} ${levelLabel} (${levelRange})`.trim();
 
-function performAnalysis() {
-    const scenario = document.getElementById('scenarioSelect').value;
-    if (scenario) {
-        document.getElementById('result').innerHTML = `<h2>${scenario}</h2><p>Performing analysis for ${scenario}...</p>`;
+    return `
+        <h3 style="margin:18px 0 8px 0;">Risk Spectrum</h3>
+        <p style="margin:0 0 10px 0;"><strong>Level:</strong> ${escapeHtml(levelText)}</p>
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" aria-label="Risk spectrum plot">
+            ${bandRects}
+            <line x1="${left}" y1="${axisY}" x2="${width - right}" y2="${axisY}" stroke="#4a4a4a" stroke-width="2"></line>
+            ${tickMarks}
+            <line x1="${scoreX}" y1="${bandTop - 34}" x2="${scoreX}" y2="${bandTop + bandHeight + 8}" stroke="#111" stroke-width="2"></line>
+            <circle cx="${scoreX}" cy="${bandTop - 37}" r="5" fill="#111"></circle>
+            <text x="${Math.max(left, Math.min(width - right - 86, scoreX + 8))}" y="${bandTop - 40}" font-size="13" fill="#111">${safeRiskScore.toFixed(3)}</text>
+            <text x="${left}" y="34" font-size="12" fill="#333">🔴 High</text>
+            <text x="${left + 112}" y="34" font-size="12" fill="#333">🟠 Moderate</text>
+            <text x="${left + 268}" y="34" font-size="12" fill="#333">🟡 Mild</text>
+            <text x="${left + 362}" y="34" font-size="12" fill="#333">🟢 Stable</text>
+            <text x="${left + 468}" y="34" font-size="12" fill="#333">🔵 Positive</text>
+        </svg>
+    `;
+}
 
-        // Make an AJAX request to the Django view
-        fetch(`/mainDash/perform_analysis_view/?scenario=${scenario}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    // Update the result area with the risk score
-                    document.getElementById('result').innerHTML = `
-
-                    <h2>Part: ${data.part_name}</h2>  
-                    <h2>Part Supplier: ${data.part_supplier_name}</h2> 
-                    <h2>Risk Score: ${data.risk_score}</h2>
-                    
-                    `;
-
-                    // Update the map with the supplier's location
-                    const supplierLat = data.supplierInfo.lat;
-                    const supplierLon = data.supplierInfo.lon;
-                    console.log("Supplier Latitude:", supplierLat);
-                    console.log("Supplier Longitude:", supplierLon);
-
-                } else {
-                    document.getElementById('result').innerHTML = `<p>Error: ${data.message}</p>`;
-                }
-            })
-            .catch(error => {
-                document.getElementById('result').innerHTML = `<p>Error: Unable to perform analysis for production chain ${scenario}.</p>`;
-                console.error("Error:", error);
-            });
+function performAnalysisForPair() {
+    const selectedPairKey = document.getElementById("nodeSupplierSelect").value;
+    if (!selectedPairKey) {
+        return;
     }
+
+    document.getElementById("result").innerHTML =
+        "<h2>News Risk Scan</h2><p>Scanning GDELT news events for the selected node-supplier pair...</p>";
+
+    fetch(`/mainDash/perform_analysis_view/?pair_key=${encodeURIComponent(selectedPairKey)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== "success") {
+                document.getElementById("result").innerHTML = `<p>Error: ${escapeHtml(data.message)}</p>`;
+                return;
+            }
+
+            const scanDetails = data.scan_details || {};
+            const riskLevel = data.risk_level || {};
+            const riskScore = Number(data.risk_score);
+            const numericRisk = Number.isFinite(riskScore) ? riskScore : 0;
+            const radiusMiles = Number(scanDetails.radius_miles);
+            const safeRadius = Number.isFinite(radiusMiles) ? radiusMiles : 50;
+            const articlesCount = Number(scanDetails.articles_count);
+            const safeArticlesCount = Number.isFinite(articlesCount) ? Math.round(articlesCount) : 0;
+            const eventsInWindow = Number(scanDetails.events_in_window);
+            const safeEventsInWindow = Number.isFinite(eventsInWindow) ? Math.round(eventsInWindow) : 0;
+            const eventsInRadius = Number(scanDetails.events_in_radius);
+            const safeEventsInRadius = Number.isFinite(eventsInRadius) ? Math.round(eventsInRadius) : 0;
+            document.getElementById("result").innerHTML = `
+                <h2>News Risk Scan Result</h2>
+                <p><strong>Node:</strong> ${escapeHtml(data.node_name)} (${escapeHtml(data.node_type)})</p>
+                <p><strong>Supplier:</strong> ${escapeHtml(data.supplier_name)}</p>
+                <p><strong>Risk Score:</strong> ${numericRisk.toFixed(3)}</p>
+                <p><strong>Scanned Location:</strong> ${escapeHtml(scanDetails.scanned_location || "Unknown")}</p>
+                <p><strong>Articles Pulled:</strong> ${safeArticlesCount}</p>
+                <p><strong>Radius Used:</strong> ${safeRadius.toFixed(0)} miles</p>
+                <p><strong>Events in Radius:</strong> ${safeEventsInRadius} (from ${safeEventsInWindow} GDELT events in the last 30 days)</p>
+                ${renderRiskSpectrum(numericRisk, riskLevel)}
+            `;
+        })
+        .catch(error => {
+            document.getElementById("result").innerHTML =
+                "<p>Error: Unable to perform analysis for the selected node and supplier pair.</p>";
+            console.error("Error:", error);
+        });
 }
 </script>
 </body>

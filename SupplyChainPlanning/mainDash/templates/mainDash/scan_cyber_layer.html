@@ -2,87 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Cyber Layer Scan</title>
+  <title>Cyber Threat Intelligence Scan</title>
   <style>
     body {
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
       background-color: #f4f6fa;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
 
-    /* 🔷 Top Box */
     .top-box {
       background-color: #1976d2;
-      color: white;
+      color: #fff;
       padding: 20px;
       text-align: center;
       font-size: 1.8em;
-      font-weight: bold;
+      font-weight: 700;
     }
 
-    /* 🔶 Middle Box: Shortened */
     .middle-box {
-      height: 180px;
-      padding: 20px;
-      background-color: #ffffff;
+      padding: 28px 20px;
+      background-color: #fff;
       border-top: 1px solid #ccc;
       border-bottom: 1px solid #ccc;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      gap: 16px;
     }
 
-    /* Container for the two dropdowns side-by-side */
-    .select-container {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-    }
-
-    .scroll-list {
+    .selector-card {
+      width: 100%;
+      max-width: 700px;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      gap: 8px;
     }
 
-    .scroll-list label {
-      margin-bottom: 5px;
-      font-weight: bold;
+    .selector-card label {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #1f2937;
     }
 
-    .scroll-list select {
-      width: 180px;
-      padding: 10px;
+    #cyber-pair-select {
+      width: 100%;
+      padding: 12px;
       font-size: 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      border-radius: 8px;
+      border: 1px solid #b7c7dc;
+      background: #fff;
     }
 
-    /* Scan Button */
-    .scan-btn {
+    #scan-btn {
+      padding: 12px 20px;
       background-color: #1976d2;
-      color: white;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
       border: none;
-      border-radius: 5px;
-      padding: 12px 24px;
-      font-size: 1em;
-      font-weight: bold;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: background-color 0.2s ease;
+      width: 100%;
+      max-width: 360px;
+      display: block;
+      margin: 0 auto;
     }
 
-    .scan-btn:hover {
+    #scan-btn:hover {
       background-color: #1565c0;
     }
 
-    /* 🔽 Bottom Box: Results */
     .bottom-box {
       flex: 1;
       background-color: #eef1f5;
@@ -92,180 +86,299 @@
 
     .results-box {
       background: #fff;
-      border-radius: 5px;
-      padding: 15px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      height: 100%;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      min-height: 220px;
     }
 
-    #scan-btn {
-        padding: 12px 20px;
-        background-color: #1976d2;
-        color: #fff;
-        font-size: 16px;
-        font-weight: 600;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        width: 100%;  /* optional: full width in container */
-        max-width: 300px;
-        display: block;
-        margin: 20px auto;  /* center horizontally */
-        }
+    .cyber-output-grid {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
 
-    #scan-btn:hover {
-        background-color: #1565c0;
-        }
+    .cve-panel {
+      flex: 1 1 60%;
+      min-width: 520px;
+    }
+
+    .summary-panel {
+      flex: 1 1 30%;
+      min-width: 280px;
+      background: #f8fbff;
+      border: 1px solid #d4e2f3;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: -8px;
+    }
+
+    .summary-panel h4 {
+      margin: 0 0 10px 0;
+      font-size: 1.05em;
+      color: #0f3f77;
+    }
+
+    .metric-row {
+      margin: 0 0 8px 0;
+    }
+
+    @media (max-width: 980px) {
+      .cve-panel {
+        min-width: 100%;
+      }
+      .summary-panel {
+        min-width: 100%;
+        margin-top: 0;
+      }
+    }
+
+    .error-text {
+      color: #b91c1c;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
+  <div class="top-box">Cyber Threat Intelligence Scan</div>
 
-  <!-- 🔷 Top Section -->
-  <div class="top-box">
-    Cyber Threats Scanning
-  </div>
-
-  <!-- 🔶 Middle Section: Dropdowns + Button -->
   <div class="middle-box">
-    <div class="select-container">
-        <!-- 🔹 Component Selector -->
-        <div class="scroll-list">
-        <label for="component-select">Select part or material:</label>
-        <select id="component-select" name="component">
-            {% for p in parts %}
-            <option value="{{ p.id }}">{{ p.part_name }}</option>
-            {% empty %}
-            <option disabled>No components found</option>
-            {% endfor %}
-        </select>
-        </div>
-
-        <!-- 🔸 Supplier Selector -->
-        <div class="scroll-list">
-        <label for="supplier-select">Select Supplier:</label>
-        <select id="supplier-select" name="supplier">
-        <option value="">-- Select Supplier --</option>
-        </select>
-        </div>
+    <div class="selector-card">
+      <label for="cyber-pair-select">Select Node and Supplier</label>
+      <select id="cyber-pair-select" data-total-pairs="{{ total_pairs }}">
+        <option value="">Select part/material and supplier</option>
+        {% if part_pairs %}
+        <optgroup label="Tier 2 Parts">
+          {% for pair in part_pairs %}
+          <option value="{{ pair.pair_key }}">{{ pair.node_name }} -> {{ pair.supplier_name }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endif %}
+        {% if material_pairs %}
+        <optgroup label="Tier 3 Materials">
+          {% for pair in material_pairs %}
+          <option value="{{ pair.pair_key }}">{{ pair.node_name }} -> {{ pair.supplier_name }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
     </div>
-
-    <!-- Scan Button -->
-    <button id="scan-btn">Scan</button>
+    <button id="scan-btn" type="button">Run Cyber Scan</button>
   </div>
 
-  <!-- 🔽 Bottom Section: Results -->
-  <div class="bottom-box" id="bottom-box-results">
-    <div class="results-box">
-      <p><strong>Results:</strong></p>
-      <p>Select a component and a supplier, then click Scan to analyze potential cyber threats.</p>
+  <div class="bottom-box">
+    <div class="results-box" id="result-box">
+      <h3>Scan Result</h3>
+      <p>Select a node-supplier pair to analyze cyber vulnerabilities.</p>
     </div>
   </div>
 
-</body>
-<script>
-window.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("component-select").addEventListener("change", function () {
-    const partid = this.value;
-    const supplierSelect = document.getElementById("supplier-select");
+  <script>
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
 
-    // Clear existing options
-    supplierSelect.innerHTML = '<option value="">-- Loading Suppliers --</option>';
+    function renderCveTable(cveData) {
+      if (!Array.isArray(cveData) || cveData.length === 0) {
+        return "<p>No CVEs found.</p>";
+      }
 
-    if (partid) {
-      fetch(`/mainDash/get-suppliers/${partid}/`)
+      return `
+        <h4>CVE Details (${cveData.length} found)</h4>
+        <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-top: 10px;">
+          <thead style="background-color: #f2f2f2;">
+            <tr>
+              <th>CVE ID</th>
+              <th>Severity</th>
+              <th>Score</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cveData.map(cve => `
+              <tr>
+                <td>${escapeHtml(cve.cve_id)}</td>
+                <td>${escapeHtml(cve.severity)}</td>
+                <td>${escapeHtml(cve.score)}</td>
+                <td>${escapeHtml(cve.description)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function parseNumericScore(value) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function severityToIndex(severity) {
+      const normalized = String(severity || "").trim().toLowerCase();
+      if (normalized.includes("critical")) return 4;
+      if (normalized.includes("high")) return 3;
+      if (normalized.includes("medium")) return 2;
+      if (normalized.includes("low")) return 1;
+      return 0;
+    }
+
+    function indexToSeverityLabel(index) {
+      if (index >= 3.5) return "Critical";
+      if (index >= 2.5) return "High";
+      if (index >= 1.5) return "Medium";
+      if (index > 0) return "Low";
+      return "Unknown";
+    }
+
+    function calculateCyberMetrics(cveData) {
+      const items = Array.isArray(cveData) ? cveData : [];
+      const cveCount = items.length;
+
+      const scores = items
+        .map(item => parseNumericScore(item.score))
+        .filter(score => score !== null);
+      const avgScore = scores.length
+        ? (scores.reduce((sum, value) => sum + value, 0) / scores.length)
+        : null;
+
+      const severities = items
+        .map(item => severityToIndex(item.severity))
+        .filter(value => value > 0);
+      const avgSeverityIndex = severities.length
+        ? (severities.reduce((sum, value) => sum + value, 0) / severities.length)
+        : 0;
+      const avgSeverityLabel = indexToSeverityLabel(avgSeverityIndex);
+
+      return {
+        cveCount,
+        avgScore,
+        avgSeverityIndex,
+        avgSeverityLabel,
+      };
+    }
+
+    function renderSeveritySpectrum(avgSeverityIndex, avgSeverityLabel) {
+      const safeSeverity = Number.isFinite(avgSeverityIndex) ? avgSeverityIndex : 0;
+      const clampedSeverity = Math.max(0, Math.min(4, safeSeverity));
+      const width = 360;
+      const height = 170;
+      const left = 20;
+      const right = 16;
+      const bandTop = 58;
+      const bandHeight = 28;
+      const axisY = bandTop + bandHeight + 22;
+      const chartWidth = width - left - right;
+      const scaleX = (value) => left + (value / 4) * chartWidth;
+
+      const bands = [
+        { start: 0, end: 1, color: "#43a047", label: "Low" },
+        { start: 1, end: 2, color: "#fbc02d", label: "Medium" },
+        { start: 2, end: 3, color: "#f57c00", label: "High" },
+        { start: 3, end: 4, color: "#d32f2f", label: "Critical" },
+      ];
+
+      const bandRects = bands.map((band) => {
+        const x = scaleX(band.start);
+        const widthPx = scaleX(band.end) - x;
+        return `<rect x="${x}" y="${bandTop}" width="${widthPx}" height="${bandHeight}" fill="${band.color}" opacity="0.92"></rect>`;
+      }).join("");
+
+      const markerX = scaleX(clampedSeverity);
+      const ticks = [0, 1, 2, 3, 4];
+      const tickMarks = ticks.map((tick) => `
+        <line x1="${scaleX(tick)}" y1="${axisY - 7}" x2="${scaleX(tick)}" y2="${axisY + 7}" stroke="#404040" stroke-width="1.4"></line>
+        <text x="${scaleX(tick) - 4}" y="${axisY + 24}" font-size="11" fill="#2a2a2a">${tick}</text>
+      `).join("");
+
+      return `
+        <h4 style="margin:14px 0 8px 0;">Severity Spectrum</h4>
+        <p class="metric-row"><strong>Average Severity:</strong> ${escapeHtml(avgSeverityLabel)} (${clampedSeverity.toFixed(2)} / 4.00)</p>
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="170" aria-label="Average CVE severity spectrum">
+          ${bandRects}
+          <line x1="${left}" y1="${axisY}" x2="${width - right}" y2="${axisY}" stroke="#444" stroke-width="2"></line>
+          ${tickMarks}
+          <line x1="${markerX}" y1="${bandTop - 26}" x2="${markerX}" y2="${bandTop + bandHeight + 6}" stroke="#101010" stroke-width="2"></line>
+          <text x="${left}" y="24" font-size="11" fill="#2a2a2a">Low</text>
+          <text x="${left + 74}" y="24" font-size="11" fill="#2a2a2a">Medium</text>
+          <text x="${left + 170}" y="24" font-size="11" fill="#2a2a2a">High</text>
+          <text x="${left + 248}" y="24" font-size="11" fill="#2a2a2a">Critical</text>
+        </svg>
+      `;
+    }
+
+    function renderSummaryPanel(metrics) {
+      const avgScoreText = metrics.avgScore === null ? "N/A" : metrics.avgScore.toFixed(2);
+      return `
+        <div class="summary-panel">
+          <h4>Cyber Risk Summary</h4>
+          <p class="metric-row"><strong>Number of CVEs:</strong> ${metrics.cveCount}</p>
+          <p class="metric-row"><strong>Average Score:</strong> ${avgScoreText}</p>
+          ${renderSeveritySpectrum(metrics.avgSeverityIndex, metrics.avgSeverityLabel)}
+        </div>
+      `;
+    }
+
+    function runCyberScan() {
+      const pairSelect = document.getElementById("cyber-pair-select");
+      const selectedPairKey = pairSelect.value;
+      const resultBox = document.getElementById("result-box");
+
+      if (!selectedPairKey) {
+        resultBox.innerHTML = "<p class=\"error-text\">Please select a node and supplier pair.</p>";
+        return;
+      }
+
+      resultBox.innerHTML = "<p>Scanning cyber vulnerabilities... please wait.</p>";
+
+      fetch(`/mainDash/scan-analysis/?pair_key=${encodeURIComponent(selectedPairKey)}`)
         .then(response => response.json())
         .then(data => {
-          console.log("Fetched JSON data:", data.suppliers);
-          supplierSelect.innerHTML = '<option value="">-- Select Supplier --</option>';
-          data.suppliers.forEach(supplier => {
-            const option = document.createElement("option");
-            console.log("show supplier:", supplier.name);
-            option.textContent = supplier.name;
-            supplierSelect.appendChild(option);
-          });
+          if (data.status !== "ok") {
+            resultBox.innerHTML = `<p class="error-text">${escapeHtml(data.message || "Cyber scan failed.")}</p>`;
+            return;
+          }
+
+          const cveData = Array.isArray(data.cve_data) ? data.cve_data : [];
+          const metrics = calculateCyberMetrics(cveData);
+
+          resultBox.innerHTML = `
+            <h3>Cyber Scan Result</h3>
+            <p><strong>Node:</strong> ${escapeHtml(data.node_name || "")} (${escapeHtml(data.node_type || "")})</p>
+            <p><strong>Supplier:</strong> ${escapeHtml(data.supplier_name || "")}</p>
+            <p><strong>Message:</strong> ${escapeHtml(data.message || "")}</p>
+            <div class="cyber-output-grid">
+              <div class="cve-panel">
+                ${renderCveTable(cveData)}
+              </div>
+              ${renderSummaryPanel(metrics)}
+            </div>
+          `;
         })
         .catch(error => {
-          console.error("Error fetching suppliers:", error);
-          supplierSelect.innerHTML = '<option value="">-- Error loading --</option>';
+          console.error("Cyber scan failed:", error);
+          resultBox.innerHTML = "<p class=\"error-text\">An error occurred while scanning cyber threats.</p>";
         });
     }
-});
-  
-    document.getElementById("scan-btn").addEventListener("click", function () {
-    const componentSelect = document.getElementById("component-select");
-    const supplierSelect = document.getElementById("supplier-select");
 
-    const selectedComponentId = componentSelect.value;
-    const selectedComponentText = componentSelect.options[componentSelect.selectedIndex].text;
+    window.addEventListener("DOMContentLoaded", () => {
+      const pairSelect = document.getElementById("cyber-pair-select");
+      const scanButton = document.getElementById("scan-btn");
+      const resultBox = document.getElementById("result-box");
+      const totalPairs = Number(pairSelect.dataset.totalPairs || 0);
 
-    const selectedSupplierId = supplierSelect.value;
-    const selectedSupplierText = supplierSelect.options[supplierSelect.selectedIndex].text;
-    
-    const resultBox = document.getElementById("bottom-box-results");
-    
-    console.log("Scan button clicked");
-    console.log("Part ID:", selectedComponentId, "| Name:", selectedComponentText);
-    console.log("Supplier ID:", selectedSupplierId, "| Name:", selectedSupplierText);
-    
-    if (!selectedComponentId || !selectedSupplierId) {
-      resultBox.innerHTML = `<p style="color:red;">Please select both a part and supplier.</p>`;
-      return;
-    }
+      if (!totalPairs) {
+        resultBox.innerHTML = "<p class=\"error-text\">No eligible node-supplier pairs available. Please load project data first.</p>";
+      }
 
-    resultBox.innerHTML = "Scanning... please wait.";
-    
-    fetch(`/mainDash/scan-analysis/?component_id=${selectedComponentId}&supplier_id=${selectedSupplierId}`)
-      .then(response => response.json())
-      .then(data => {
-    if (data.status === "ok") {
-        let cveTableHTML = "";
-
-        if (data.cve_data && data.cve_data.length > 0) {
-            cveTableHTML = `
-            <h4>🔍 CVE Details (${data.cve_data.length} found)</h4>
-            <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-top: 10px;">
-                <thead style="background-color: #f2f2f2;">
-                <tr>
-                    <th>CVE ID</th>
-                    <th>Severity</th>
-                    <th>Score</th>
-                    <th>Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                ${data.cve_data.map(cve => `
-                    <tr>
-                    <td>${cve.cve_id}</td>
-                    <td>${cve.severity}</td>
-                    <td>${cve.score}</td>
-                    <td>${cve.description}</td>
-                    </tr>
-                `).join('')}
-                </tbody>
-            </table>
-            `;
-        } else {
-            cveTableHTML = `<p>No CVEs found.</p>`;
-        }
-
-        resultBox.innerHTML = `
-            <h3> Scan Result</h3>
-            <p><strong>Message:</strong> ${data.message}</p>
-            ${cveTableHTML}
-        `;
-        }
-        
-    else {
-          resultBox.innerHTML = `<p style="color:red;">${data.message}</p>`;
-        }
-    })
-      .catch(error => {
-        console.error("Scan failed:", error);
-        resultBox.innerHTML = `<p style="color:red;">An error occurred while scanning.</p>`;
-      });
-
+      scanButton.addEventListener("click", runCyberScan);
     });
-});
-</script>
+  </script>
+</body>
 </html>

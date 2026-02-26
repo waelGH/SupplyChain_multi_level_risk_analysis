@@ -92,7 +92,12 @@ Once `pip` has finished downloading the dependencies:
 And navigate to `http://127.0.0.1:8000/mainDash/`.
 
 ### Loading Data files
-You will need to load the data files you generated `mock_bom_data.csv` and `mock_supplier_data.csv` the first time you run the dashboard application. There are green buttons in the lower left corner to "Link Data Sets". 
+Use the **Load Project** button in the dashboard to import the vessel case-study dataset directly from:
+
+- `SC_data_generator/__vessel_nodes_realistic_case_study_with_dates.csv`
+- `SC_data_generator/__vessel_edges_case_study.csv`
+
+This loader rebuilds the case-study records in the database from those files and uses a NetworkX model for plan/simulation endpoints.
 
 ## Admin 
 ### Access
