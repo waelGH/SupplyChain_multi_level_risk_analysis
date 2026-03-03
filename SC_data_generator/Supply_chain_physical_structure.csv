@@ -1,0 +1,43 @@
+component,part,raw_material,tier
+Propulsion System,,,Component
+Propulsion System,,,Component
+Navigation & Sensors,,,Component
+Navigation & Sensors,,,Component
+Hull & Structural,,,Component
+Hull & Structural,,,Component
+Propulsion System,Gas Turbine Engine,,Part
+Propulsion System,Gas Turbine Engine,,Part
+Propulsion System,Reduction Gearbox,,Part
+Propulsion System,Reduction Gearbox,,Part
+Navigation & Sensors,Radar Antenna,,Part
+Navigation & Sensors,Radar Antenna,,Part
+Navigation & Sensors,Inertial Navigation Unit,,Part
+Navigation & Sensors,Inertial Navigation Unit,,Part
+Hull & Structural,Hull Plate Section,,Part
+Hull & Structural,Hull Plate Section,,Part
+Hull & Structural,Ballast Pump,,Part
+Hull & Structural,Ballast Pump,,Part
+Propulsion System,Gas Turbine Engine,Nickel-based Superalloy,RawMaterial
+Propulsion System,Gas Turbine Engine,Nickel-based Superalloy,RawMaterial
+Propulsion System,Gas Turbine Engine,Titanium Alloy Bar,RawMaterial
+Propulsion System,Gas Turbine Engine,Titanium Alloy Bar,RawMaterial
+Propulsion System,Reduction Gearbox,Alloy Steel Gear Blank,RawMaterial
+Propulsion System,Reduction Gearbox,Alloy Steel Gear Blank,RawMaterial
+Propulsion System,Reduction Gearbox,High-Strength Bearing Steel,RawMaterial
+Propulsion System,Reduction Gearbox,High-Strength Bearing Steel,RawMaterial
+Navigation & Sensors,Radar Antenna,RF-grade Copper,RawMaterial
+Navigation & Sensors,Radar Antenna,RF-grade Copper,RawMaterial
+Navigation & Sensors,Radar Antenna,Composite Epoxy Prepreg,RawMaterial
+Navigation & Sensors,Radar Antenna,Composite Epoxy Prepreg,RawMaterial
+Navigation & Sensors,Inertial Navigation Unit,Quartz Crystal,RawMaterial
+Navigation & Sensors,Inertial Navigation Unit,Quartz Crystal,RawMaterial
+Navigation & Sensors,Inertial Navigation Unit,Rare-earth Magnets (NdFeB),RawMaterial
+Navigation & Sensors,Inertial Navigation Unit,Rare-earth Magnets (NdFeB),RawMaterial
+Hull & Structural,Hull Plate Section,Marine-grade Steel (AH36),RawMaterial
+Hull & Structural,Hull Plate Section,Marine-grade Steel (AH36),RawMaterial
+Hull & Structural,Hull Plate Section,Weld Wire (Flux-Cored),RawMaterial
+Hull & Structural,Hull Plate Section,Weld Wire (Flux-Cored),RawMaterial
+Hull & Structural,Ballast Pump,Stainless Steel 316,RawMaterial
+Hull & Structural,Ballast Pump,Stainless Steel 316,RawMaterial
+Hull & Structural,Ballast Pump,Elastomer Seals (Nitrile),RawMaterial
+Hull & Structural,Ballast Pump,Elastomer Seals (Nitrile),RawMaterial

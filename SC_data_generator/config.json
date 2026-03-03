@@ -1,0 +1,53 @@
+{
+  "ddl_date": "2026-11-15",
+
+  "buffers": { 
+      "system_integration_buffer_days": {
+        "SYS::NextGen_Vessel": [60, 120],
+        "default": [45, 90]
+      },  
+      "component_integration_buffer_days": {
+        "COMP::Hull & Structural": [45, 90],
+        "COMP::Propulsion System": [30, 75],
+        "COMP::Navigation & Sensors": [21, 60],
+        "default": [30, 60]
+      },
+      "part_integration_buffer_days": {
+        "PART::Gas Turbine Engine": [15, 45],
+        "PART::Ballast Pump": [10, 30],
+        "PART::Hull Plate Section": [5, 20],
+        "default": [7, 25]
+      }
+  },
+
+  "durations": {
+    "integration_assembly_duration_days": {
+      "SYS::NextGen_Vessel": [80, 130],
+      "COMP::Hull & Structural": [50, 90],
+      "COMP::Propulsion System": [40, 75],
+      "COMP::Navigation & Sensors": [30, 60],
+      "PART::Gas Turbine Engine": [20, 40],
+      "PART::Reduction Gearbox": [18, 35],
+      "PART::Ballast Pump": [8, 20],
+      "PART::Hull Plate Section": [12, 30],
+      "PART::Radar Suite": [15, 32],
+      "RAW::default": [0, 0],
+      "default": [10, 25]
+    },
+
+    "material_input_staging_duration_days": {
+      "RAW::Nickel-based Superalloy": [7, 28],
+      "RAW::Titanium Alloy Bar": [5, 21],
+      "RAW::Alloy Steel Gear Blank": [5, 18],
+      "RAW::Marine-grade Steel Plate": [3, 14],
+      "RAW::Electronic-grade PCB Substrate": [7, 30],
+      "RAW::default": [3, 21]
+    }
+  },
+
+  "params": {
+    "load_days_range": [0, 2],
+    "transit_days_range": [1, 5],
+    "window_days_range": [2, 6]
+  }
+}

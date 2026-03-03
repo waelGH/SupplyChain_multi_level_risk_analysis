@@ -1,0 +1,82 @@
+node_id,node_type,name,tier,criticality,lead_time_baseline_days,unit_cost_usd,single_source_flag,owner_org_id,country,region,capacity_index,cyber_maturity,attack_surface,trust_zone,it_ot_profile,latitude,longitude,need_by_date,procurement_start_date,integration_start,sampled_buffer_days,sampled_integration_duration_days,used_lead_time_days
+COMP::Hull & Structural,component,Hull & Structural,T1_component,0.932186815,135.0,4483846.290786349,1,ORG::T1_Hull_&_Structural,US,,0.7,0.6,0.4,internal,ot,,,2026-07-18,2025-12-25,2026-05-28,52,51.0,153
+COMP::Navigation & Sensors,component,Navigation & Sensors,T1_component,0.8316635319256157,83.0,5507054.977,1,ORG::T1_Navigation_&_Sensors,US,,0.7,0.6,0.4,internal,ot,,,2026-07-18,2026-03-28,2026-06-11,38,37.0,74
+COMP::Propulsion System,component,Propulsion System,T1_component,0.9575793759734148,40.0,8691837.986,1,ORG::T1_Propulsion_System,US,,0.7,0.6,0.4,internal,ot,,,2026-07-18,2026-04-28,2026-05-31,44,48.0,37
+PART::Ballast Pump,part,Ballast Pump,T2_part,0.748684015,117.0,100580.6616529606,0,ORG::T2_Ballast_Pump,US,,0.7,0.6,0.4,internal,ot,,,2026-05-28,2026-01-12,2026-05-10,13,18.0,123
+PART::Gas Turbine Engine,part,Gas Turbine Engine,T2_part,0.4470886739438248,61.0,80744.33276053012,0,ORG::T2_Gas_Turbine_Engine,US,,0.7,0.6,0.4,internal,ot,,,2026-05-31,2026-02-17,2026-05-04,21,27.0,82
+PART::Hull Plate Section,part,Hull Plate Section,T2_part,0.887811176,109.0,289119.7996861281,0,ORG::T2_Hull_Plate_Section,US,,0.7,0.6,0.4,internal,ot,,,2026-05-28,2026-02-18,2026-04-28,7,30.0,92
+PART::Inertial Navigation Unit,part,Inertial Navigation Unit,T2_part,0.7805698509951765,86.0,115476.17609249544,0,ORG::T2_Inertial_Navigation_Unit,US,,0.7,0.6,0.4,internal,ot,,,2026-06-11,2026-02-02,2026-05-31,20,11.0,109
+PART::Radar Antenna,part,Radar Antenna,T2_part,0.7930321526384769,97.0,591632.7504944726,1,ORG::T2_Radar_Antenna,US,,0.7,0.6,0.4,internal,ot,,,2026-06-11,2026-03-09,2026-05-30,7,12.0,87
+PART::Reduction Gearbox,part,Reduction Gearbox,T2_part,0.4640568163377729,95.0,250791.9566028028,0,ORG::T2_Reduction_Gearbox,US,,0.7,0.6,0.4,internal,ot,,,2026-05-31,2026-01-20,2026-05-13,23,18.0,108
+RAW::Alloy Steel Gear Blank,raw_material,Alloy Steel Gear Blank,T3_raw,0.4251929689477836,23.0,23138.030885577624,0,ORG::T3_Alloy_Steel_Gear_Blank,US,,0.7,0.6,0.4,internal,ot,,,2026-05-13,2026-03-29,2026-04-25,18,18.0,27
+RAW::Composite Epoxy Prepreg,raw_material,Composite Epoxy Prepreg,T3_raw,0.3853990121162906,37.0,12574.774576068256,1,ORG::T3_Composite_Epoxy_Prepreg,US,,0.7,0.6,0.4,internal,ot,,,2026-05-30,2026-04-05,2026-05-23,15,7.0,40
+RAW::Elastomer Seals (Nitrile),raw_material,Elastomer Seals (Nitrile),T3_raw,0.6633824944243009,46.0,2107.188013064608,1,ORG::T3_Elastomer_Seals_(Nitrile),US,,0.7,0.6,0.4,internal,ot,,,2026-05-10,2026-03-01,2026-05-01,24,9.0,46
+RAW::High-Strength Bearing Steel,raw_material,High-Strength Bearing Steel,T3_raw,0.5219325600403322,48.0,23093.491944330624,0,ORG::T3_High-Strength_Bearing_Steel,US,,0.7,0.6,0.4,internal,ot,,,2026-05-13,2026-03-03,2026-05-02,18,11.0,53
+RAW::Marine-grade Steel (AH36),raw_material,Marine-grade Steel (AH36),T3_raw,0.6113808066354149,10.0,20346.921958344505,0,ORG::T3_Marine-grade_Steel_(AH36),US,,0.7,0.6,0.4,internal,ot,,,2026-04-28,2026-04-04,2026-04-11,14,17.0,10
+RAW::Nickel-based Superalloy,raw_material,Nickel-based Superalloy,T3_raw,0.4217070994136656,52.0,2978.014187234698,0,ORG::T3_Nickel-based_Superalloy,US,,0.7,0.6,0.4,internal,ot,,,2026-05-04,2026-03-02,2026-04-25,10,9.0,53
+RAW::Quartz Crystal,raw_material,Quartz Crystal,T3_raw,0.3136193608923884,19.0,1886.3670951347976,0,ORG::T3_Quartz_Crystal,US,,0.7,0.6,0.4,internal,ot,,,2026-05-31,2026-05-08,2026-05-23,7,8.0,16
+RAW::RF-grade Copper,raw_material,RF-grade Copper,T3_raw,0.4772923935079173,69.0,11586.73334450375,0,ORG::T3_RF-grade_Copper,US,,0.7,0.6,0.4,internal,ot,,,2026-05-30,2026-02-28,2026-05-17,13,13.0,78
+RAW::Rare-earth Magnets (NdFeB),raw_material,Rare-earth Magnets (NdFeB),T3_raw,0.2319086280520876,64.0,951.6450031119306,0,ORG::T3_Rare-earth_Magnets_(NdFeB),US,,0.7,0.6,0.4,internal,ot,,,2026-05-31,2026-02-16,2026-05-18,20,13.0,84
+RAW::Stainless Steel 316,raw_material,Stainless Steel 316,T3_raw,0.613815586,84.0,1255.4123864797682,0,ORG::T3_Stainless_Steel_316,US,,0.7,0.6,0.4,internal,ot,,,2026-05-10,2026-01-09,2026-04-24,24,16.0,97
+RAW::Titanium Alloy Bar,raw_material,Titanium Alloy Bar,T3_raw,0.5158321995610324,69.0,517.2429069761444,1,ORG::T3_Titanium_Alloy_Bar,US,,0.7,0.6,0.4,internal,ot,,,2026-05-04,2026-02-14,2026-04-26,19,8.0,60
+RAW::Weld Wire (Flux-Cored),raw_material,Weld Wire (Flux-Cored),T3_raw,0.5790438700426869,37.0,18742.12194781567,0,ORG::T3_Weld_Wire_(Flux-Cored),US,,0.7,0.6,0.4,internal,ot,,,2026-04-28,2026-02-26,2026-04-17,25,11.0,36
+PROG::NextGen_Vessel_Program,program,Next-Generation Vessel Program,T0_program,0.98,,,0,,US,VA,,,,,,,,,,,,,
+SYS::NextGen_Vessel,system,NextGen Vessel Platform,T0_system,0.97,,,0,,US,VA,,,,,,,,2026-11-15,,2026-07-18,,120.0,
+ORG::Prime_Shipbuilder,org,Prime Shipbuilder (Integrator),T0_org,0.96,,,0,,US,VA,0.75,0.72,0.45,controlled,mixed,38.82187,-80.02565,,,,,,
+ORG::T1_Hull_&_Structural,org,T1 Hull & Structural,T1_org,0.5592539794323869,,,0,,US,MD,0.5,0.54,0.71,partner,mixed,39.53134,-76.36184,,,,,,
+ORG::T1_Navigation_&_Sensors,org,T1 Navigation & Sensors,T1_org,0.7684822296061447,,,0,,US,MD,0.37,0.49,0.43,partner,mixed,38.07894,-75.1097,,,,,,
+ORG::T1_Propulsion_System,org,T1 Propulsion System,T1_org,0.7576606732872868,,,0,,US,VA,0.74,0.73,0.53,partner,ot,38.78342,-77.03985,,,,,,
+ORG::T2_Ballast_Pump,org,T2 Ballast Pump,T2_org,0.8494892689707959,,,0,,US,PA,0.35,0.77,0.68,partner,ot,40.0331,-77.94272,,,,,,
+ORG::T2_Gas_Turbine_Engine,org,T2 Gas Turbine Engine,T2_org,0.6075274149303592,,,0,,US,PA,0.88,0.58,0.35,partner,it,40.66407,-75.13209,,,,,,
+ORG::T2_Hull_Plate_Section,org,T2 Hull Plate Section,T2_org,0.8635729155485601,,,0,,US,TX,0.68,0.77,0.7,partner,mixed,32.68936,-95.83955,,,,,,
+ORG::T2_Inertial_Navigation_Unit,org,T2 Inertial Navigation Unit,T2_org,0.9100528326723673,,,0,,US,MD,0.56,0.67,0.76,partner,mixed,38.74249,-78.47743,,,,,,
+ORG::T2_Radar_Antenna,org,T2 Radar Antenna,T2_org,0.7636202937450021,,,0,,US,TX,0.74,0.47,0.43,partner,ot,31.73406,-105.85761,,,,,,
+ORG::T2_Reduction_Gearbox,org,T2 Reduction Gearbox,T2_org,0.8664675567756044,,,0,,US,MD,0.83,0.6,0.55,partner,ot,39.4725,-76.65751,,,,,,
+ORG::T3_Alloy_Steel_Gear_Blank,org,T3 Alloy Steel Gear Blank,T3_org,0.6869669578332467,,,0,,US,CT,0.47,0.56,0.82,partner,mixed,41.8339,-73.0264,,,,,,
+ORG::T3_Composite_Epoxy_Prepreg,org,T3 Composite Epoxy Prepreg,T3_org,0.7753784720967857,,,0,,US,MD,0.44,0.74,0.39,partner,ot,39.74433,-75.48095,,,,,,
+ORG::T3_Elastomer_Seals_(Nitrile),org,T3 Elastomer Seals (Nitrile),T3_org,0.9161236397355405,,,0,,US,PA,0.7,0.67,0.68,partner,it,41.7238,-79.45163,,,,,,
+ORG::T3_High-Strength_Bearing_Steel,org,T3 High-Strength Bearing Steel,T3_org,0.8540669597825191,,,0,,US,MA,0.79,0.61,0.34,partner,mixed,41.99343,-73.43793,,,,,,
+ORG::T3_Marine-grade_Steel_(AH36),org,T3 Marine-grade Steel (AH36),T3_org,0.6286718213000321,,,0,,US,TX,0.62,0.8,0.65,partner,it,27.4509,-97.68375,,,,,,
+ORG::T3_Nickel-based_Superalloy,org,T3 Nickel-based Superalloy,T3_org,0.6016632182244374,,,0,,US,PA,0.76,0.67,0.71,partner,ot,41.63638,-74.89169,,,,,,
+ORG::T3_Quartz_Crystal,org,T3 Quartz Crystal,T3_org,0.683938684,,,0,,US,OH,0.9,0.51,0.57,partner,it,39.54039,-83.23293,,,,,,
+ORG::T3_RF-grade_Copper,org,T3 RF-grade Copper,T3_org,0.6065512881588566,,,0,,US,MD,0.44,0.72,0.63,partner,ot,38.79216,-78.64738,,,,,,
+ORG::T3_Rare-earth_Magnets_(NdFeB),org,T3 Rare-earth Magnets (NdFeB),T3_org,0.7704787184936175,,,0,,US,OH,0.61,0.55,0.6,partner,it,38.85473,-82.75933,,,,,,
+ORG::T3_Stainless_Steel_316,org,T3 Stainless Steel 316,T3_org,0.8022328365398327,,,0,,US,MD,0.65,0.56,0.65,partner,it,38.33113,-76.48584,,,,,,
+ORG::T3_Titanium_Alloy_Bar,org,T3 Titanium Alloy Bar,T3_org,0.7108631427475689,,,0,,US,PA,0.6,0.83,0.78,partner,ot,40.83659,-75.6872,,,,,,
+ORG::T3_Weld_Wire_(Flux-Cored),org,T3 Weld Wire (Flux-Cored),T3_org,0.7378422196036004,,,0,,US,CT,0.41,0.7,0.76,partner,mixed,41.77029,-73.1065,,,,,,
+ORG::ALT_Ballast_Pump_1,org,Alt Supplier 1 for Ballast Pump,T2_org,0.5995655410364592,,,0,,CA,CT,0.35,0.8,0.86,partner,it,57.14842,-68.20456,,,,,,
+ORG::ALT_Ballast_Pump_2,org,Alt Supplier 2 for Ballast Pump,T2_org,0.4577906969543329,,,0,,DE,NC,0.81,0.76,0.81,partner,ot,50.18358,8.55262,,,,,,
+ORG::ALT_Gas_Turbine_Engine_1,org,Alt Supplier 1 for Gas Turbine Engine,T2_org,0.5463486369788932,,,0,,CA,VA,0.59,0.39,0.75,partner,it,54.60242,-123.40054,,,,,,
+ORG::ALT_Gas_Turbine_Engine_2,org,Alt Supplier 2 for Gas Turbine Engine,T2_org,0.713900329,,,0,,US,CT,0.82,0.43,0.64,partner,mixed,41.2199,-73.68601,,,,,,
+ORG::ALT_Hull_Plate_Section_1,org,Alt Supplier 1 for Hull Plate Section,T2_org,0.8215653972008707,,,0,,JP,MA,0.7,0.67,0.74,partner,ot,42.95132,140.7387,,,,,,
+ORG::ALT_Hull_Plate_Section_2,org,Alt Supplier 2 for Hull Plate Section,T2_org,0.8098456338571782,,,0,,DE,NC,0.52,0.47,0.39,partner,it,52.62977,13.08271,,,,,,
+ORG::ALT_Inertial_Navigation_Unit_1,org,Alt Supplier 1 for Inertial Navigation Unit,T2_org,0.5380869537806238,,,0,,CA,BC,0.29,0.65,0.48,partner,it,50.80157,-87.79448,,,,,,
+ORG::ALT_Inertial_Navigation_Unit_2,org,Alt Supplier 2 for Inertial Navigation Unit,T2_org,0.6556624479234356,,,0,,DE,MD,0.42,0.58,0.65,partner,mixed,48.27644,6.95368,,,,,,
+ORG::ALT_Radar_Antenna_1,org,Alt Supplier 1 for Radar Antenna,T2_org,0.7638477697163013,,,0,,KR,MA,0.73,0.44,0.4,partner,ot,37.24097,127.79595,,,,,,
+ORG::ALT_Radar_Antenna_2,org,Alt Supplier 2 for Radar Antenna,T2_org,0.6144409104198952,,,0,,DE,OH,0.77,0.38,0.71,partner,mixed,51.55232,12.93799,,,,,,
+ORG::ALT_Reduction_Gearbox_1,org,Alt Supplier 1 for Reduction Gearbox,T2_org,0.6110485128409076,,,0,,US,VA,0.45,0.75,0.49,partner,it,38.40415,-79.03922,,,,,,
+ORG::ALT_Reduction_Gearbox_2,org,Alt Supplier 2 for Reduction Gearbox,T2_org,0.6187526559337617,,,0,,KR,CT,0.42,0.47,0.86,partner,ot,36.76051,127.19422,,,,,,
+ORG::ALT_Alloy_Steel_Gear_Blank_1,org,Alt Supplier 1 for Alloy Steel Gear Blank,T3_org,0.7108579575994087,,,0,,US,VA,0.57,0.36,0.4,partner,it,36.59245,-80.04423,,,,,,
+ORG::ALT_Alloy_Steel_Gear_Blank_2,org,Alt Supplier 2 for Alloy Steel Gear Blank,T3_org,0.6442564501802874,,,0,,US,OH,0.38,0.54,0.38,partner,ot,39.15105,-83.06162,,,,,,
+ORG::ALT_Composite_Epoxy_Prepreg_1,org,Alt Supplier 1 for Composite Epoxy Prepreg,T3_org,0.5560812232688608,,,0,,US,OH,0.72,0.56,0.58,partner,mixed,41.38691,-83.84727,,,,,,
+ORG::ALT_Composite_Epoxy_Prepreg_2,org,Alt Supplier 2 for Composite Epoxy Prepreg,T3_org,0.5259591469070548,,,0,,KR,CT,0.38,0.38,0.75,partner,it,34.55653,127.11298,,,,,,
+ORG::ALT_Elastomer_Seals_Nitrile_1,org,Alt Supplier 1 for Elastomer Seals (Nitrile),T3_org,0.4700569349055814,,,0,,DE,VA,0.54,0.78,0.64,partner,it,49.46067,11.98963,,,,,,
+ORG::ALT_Elastomer_Seals_Nitrile_2,org,Alt Supplier 2 for Elastomer Seals (Nitrile),T3_org,0.4774085330815169,,,0,,US,CT,0.29,0.76,0.57,partner,mixed,41.61274,-72.21059,,,,,,
+ORG::ALT_High_Strength_Bearing_St_1,org,Alt Supplier 1 for High-Strength Bearing Steel,T3_org,0.6878076614133765,,,0,,CA,BC,0.62,0.55,0.67,partner,mixed,54.29333,-101.26989,,,,,,
+ORG::ALT_High_Strength_Bearing_St_2,org,Alt Supplier 2 for High-Strength Bearing Steel,T3_org,0.5317036797694146,,,0,,DE,PA,0.68,0.46,0.57,partner,mixed,53.46796,7.43615,,,,,,
+ORG::ALT_Marine_grade_Steel_AH36_1,org,Alt Supplier 1 for Marine-grade Steel (AH36),T3_org,0.5764708785087416,,,0,,GB,NC,0.7,0.38,0.6,partner,mixed,50.10214,-6.75355,,,,,,
+ORG::ALT_Marine_grade_Steel_AH36_2,org,Alt Supplier 2 for Marine-grade Steel (AH36),T3_org,0.6650537616406509,,,0,,US,MD,0.55,0.41,0.54,partner,it,39.27248,-77.42155,,,,,,
+ORG::ALT_Nickel_based_Superalloy_1,org,Alt Supplier 1 for Nickel-based Superalloy,T3_org,0.5639949564866626,,,0,,CA,TX,0.51,0.61,0.52,partner,mixed,45.74162,-93.41328,,,,,,
+ORG::ALT_Nickel_based_Superalloy_2,org,Alt Supplier 2 for Nickel-based Superalloy,T3_org,0.7768416540461847,,,0,,US,,0.43,0.66,0.87,partner,it,28.65549,-84.45268,,,,,,
+ORG::ALT_Quartz_Crystal_1,org,Alt Supplier 1 for Quartz Crystal,T3_org,0.8058850828022837,,,0,,GB,MD,0.7,0.42,0.5,partner,it,53.87079,-4.0184,,,,,,
+ORG::ALT_Quartz_Crystal_2,org,Alt Supplier 2 for Quartz Crystal,T3_org,0.7249988515205321,,,0,,DE,MA,0.76,0.59,0.49,partner,it,49.52164,11.6986,,,,,,
+ORG::ALT_RF_grade_Copper_1,org,Alt Supplier 1 for RF-grade Copper,T3_org,0.6194303090254906,,,0,,US,,0.42,0.35,0.77,partner,mixed,33.6835,-119.63383,,,,,,
+ORG::ALT_RF_grade_Copper_2,org,Alt Supplier 2 for RF-grade Copper,T3_org,0.7464923633391722,,,0,,GB,CT,0.58,0.55,0.36,partner,it,50.95025,1.44184,,,,,,
+ORG::ALT_Rare_earth_Magnets_NdFeB_1,org,Alt Supplier 1 for Rare-earth Magnets (NdFeB),T3_org,0.4644112552243322,,,0,,US,ON,0.47,0.61,0.59,partner,it,48.36006,-80.57612,,,,,,
+ORG::ALT_Rare_earth_Magnets_NdFeB_2,org,Alt Supplier 2 for Rare-earth Magnets (NdFeB),T3_org,0.809592595,,,0,,GB,TX,0.73,0.75,0.84,partner,it,52.26624,1.51026,,,,,,
+ORG::ALT_Stainless_Steel_316_1,org,Alt Supplier 1 for Stainless Steel 316,T3_org,0.4911174486687142,,,0,,CA,,0.72,0.77,0.57,partner,mixed,56.23877,-75.49811,,,,,,
+ORG::ALT_Stainless_Steel_316_2,org,Alt Supplier 2 for Stainless Steel 316,T3_org,0.7958422784879855,,,0,,US,MA,0.84,0.73,0.83,partner,it,41.96391,-72.59271,,,,,,
+ORG::ALT_Titanium_Alloy_Bar_1,org,Alt Supplier 1 for Titanium Alloy Bar,T3_org,0.7629545984590527,,,0,,US,TX,0.5,0.66,0.75,partner,it,26.83138,-94.78565,,,,,,
+ORG::ALT_Titanium_Alloy_Bar_2,org,Alt Supplier 2 for Titanium Alloy Bar,T3_org,0.7649498036541884,,,0,,GB,CT,0.31,0.76,0.82,partner,it,53.95641,-5.69778,,,,,,
+ORG::ALT_Weld_Wire_Flux_Cored_1,org,Alt Supplier 1 for Weld Wire (Flux-Cored),T3_org,0.5898633697783675,,,0,,CA,NC,0.74,0.76,0.47,partner,mixed,48.20126,-86.92478,,,,,,
+ORG::ALT_Weld_Wire_Flux_Cored_2,org,Alt Supplier 2 for Weld Wire (Flux-Cored),T3_org,0.5813047804790826,,,0,,CA,OH,0.77,0.8,0.5,partner,mixed,46.00514,-63.90101,,,,,,
