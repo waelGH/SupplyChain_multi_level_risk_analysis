@@ -1,5 +1,5 @@
 path_step_from_disrupted,injected_disruption_node,injected_delay_days,node_id,node_type,parent_node_id,mode_to_parent,edge_type_to_parent,baseline_integration_start,simulated_integration_start,sampled_buffer_days,incoming_delay_days,absorbed_by_buffer_days,residual_delay_after_buffer_days,baseline_finish_date,simulated_finish_date,finish_delay_days
-0,RAW::Alloy Steel Gear Blank,14,RAW::Alloy Steel Gear Blank,raw_material,PART::Reduction Gearbox,land,material_input,2026-04-25,2026-04-25,18,14,14,0,2026-05-13,2026-05-13,0
-1,RAW::Alloy Steel Gear Blank,14,PART::Reduction Gearbox,part,COMP::Propulsion System,land,assembly_dependency,2026-05-13,2026-05-13,23,0,0,0,2026-05-31,2026-05-31,0
-2,RAW::Alloy Steel Gear Blank,14,COMP::Propulsion System,component,SYS::NextGen_Vessel,internal,integrates,2026-05-31,2026-05-31,44,0,0,0,2026-07-18,2026-07-18,0
+0,RAW::Alloy Steel Gear Blank,14,RAW::Alloy Steel Gear Blank,raw_material,PART::Reduction Gearbox,land,material_input,2026-04-23,2026-05-02,5,14,5,9,2026-04-29,2026-05-08,9
+1,RAW::Alloy Steel Gear Blank,14,PART::Reduction Gearbox,part,COMP::Propulsion System,land,assembly_dependency,2026-04-29,2026-04-29,10,9,9,0,2026-05-24,2026-05-24,0
+2,RAW::Alloy Steel Gear Blank,14,COMP::Propulsion System,component,SYS::NextGen_Vessel,internal,integrates,2026-05-24,2026-05-24,29,0,0,0,2026-07-18,2026-07-18,0
 3,RAW::Alloy Steel Gear Blank,14,SYS::NextGen_Vessel,system,,,,2026-07-18,2026-07-18,0,0,0,0,2026-11-15,2026-11-15,0
