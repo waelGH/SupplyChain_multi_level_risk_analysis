@@ -697,71 +697,222 @@ function runSimulation() {
     activeAnalysisView = "simulation";
     document.getElementById("advancedAnalysisResult").style.display = "none";
     document.getElementById("productionPlanResult").style.display = "block";
-    // if (!currentPlan) {
-    //     alert("Please generate a production plan first.");
-    //     return;
-    // }
-
     document.getElementById('productionPlanResult').innerHTML = `
         <h2 class="section-title">Selected Suppliers</h2>
-        <p>Running simulation...</p>
+        <p>Loading deterministic simulation outputs...</p>
     `;
 
-    fetch("/mainDash/simulate_plan/", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCSRFToken()
-        },
-        body: JSON.stringify({ plan: currentPlan })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            const riskDict = data.risk_scores;
+    fetch("/mainDash/deterministic_results/")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== "success") {
+                const missingText = (data.missing_files || []).length
+                    ? `<p>Missing files: ${data.missing_files.join(", ")}</p>`
+                    : "";
+                showAnalysisPanel(`
+                    <h2 class="section-title">Simulation Results</h2>
+                    <p>${data.message || "Deterministic results are not available."}</p>
+                    ${missingText}
+                `);
+                return;
+            }
 
-            const riskRows = Object.entries(riskDict).map(([node, details]) => `
-                <tr>
-                    <td>${node}</td>
-                    <td>${details.tier}</td>
-                    <td>${details.risk_from_news.toFixed(2)}</td>
-                    <td>${details.cyber_risk_score}</td>
-                </tr>
-            `).join('');
+            const summary = data.summary || {};
+            const topNodes = data.top_nodes || [];
+            const explanation = data.explanation || {};
+            const visibleNodes = topNodes.filter(row =>
+                row.impacted === true || Number(row.finish_delay_days || 0) > 0
+            );
 
-            const simulationHtml = `
-                <h2 class="section-title">Simulation Results</h2>
+            const summaryHtml = `
+                <h3 class="section-title" style="font-size:1.03em;margin-top:0;">Scenario Summary</h3>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Node</th>
-                            <th>Tier</th>
-                            <th>News Risk</th>
-                            <th>Cyber Risk</th>
-                        </tr>
-                    </thead>
                     <tbody>
-                        ${riskRows}
+                        <tr><th>Disrupted Node ID</th><td>${summary.disrupted_node_id || ""}</td></tr>
+                        <tr><th>Injected Delay (days)</th><td>${formatNumber(summary.injected_delay_days)}</td></tr>
+                        <tr><th>Root Impacted</th><td>${summary.root_impacted ? "Yes" : "No"}</td></tr>
+                        <tr><th>Root Delay (days)</th><td>${formatNumber(summary.root_delay_days)}</td></tr>
+                        <tr><th>Total Impacted Nodes</th><td>${formatNumber(summary.total_impacted_nodes)}</td></tr>
                     </tbody>
                 </table>
             `;
-            showAnalysisPanel(simulationHtml);
-        } else {
-            showAnalysisPanel(`<p>Error: ${data.message}</p>`);
-        }
-    })
-    .catch(error => {
-        console.error("Simulation error:", error);
-        alert("Simulation failed.");
-    });
+
+            const rowsHtml = visibleNodes.map(row => `
+                <tr>
+                    <td>${row.node_id || ""}</td>
+                    <td>${formatNumber(row.finish_delay_days)}</td>
+                    <td>${formatNumber(row.absorbed_by_buffer_days)}</td>
+                    <td>${row.impacted ? "Yes" : "No"}</td>
+                    <td>${row.is_disrupted_node ? "Yes" : "No"}</td>
+                </tr>
+            `).join("");
+
+            const tableHtml = `
+                <h3 class="section-title" style="font-size:1.03em;">Most Affected Nodes</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node ID</th>
+                            <th>Finish Delay (days)</th>
+                            <th>Absorbed by Buffer (days)</th>
+                            <th>Impacted</th>
+                            <th>Is Disrupted Node</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml || '<tr><td colspan="5">No impacted nodes in this scenario.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+
+            const explanationText = explanation.reached_root
+                ? "Disruption reached the root node."
+                : "Disruption stopped before reaching the root.";
+            const absorberText = explanation.absorber_node_id
+                ? `Primary absorbing node: ${explanation.absorber_node_id}.`
+                : "No single absorbing node identified.";
+
+            const explanationHtml = `
+                <h3 class="section-title" style="font-size:1.03em;">Propagation Explanation</h3>
+                <p>${explanationText} ${absorberText}</p>
+            `;
+
+            showAnalysisPanel(`
+                <h2 class="section-title">Simulation Results</h2>
+                ${summaryHtml}
+                ${tableHtml}
+                ${explanationHtml}
+            `);
+        })
+        .catch(error => {
+            console.error("Deterministic results fetch error:", error);
+            showAnalysisPanel(`
+                <h2 class="section-title">Simulation Results</h2>
+                <p>Unable to load deterministic simulation results.</p>
+            `);
+        });
 }
 
 function runMonteCarloAnalysis() {
     activeAnalysisView = "monte_carlo";
-    showAdvancedAnalysisArea(
-        "Monte Carlo Analysis",
-        "Monte Carlo analysis workspace. Results and distribution outputs will appear here."
-    );
+    showAdvancedAnalysisArea("Monte Carlo Analysis", "Loading Monte Carlo outputs...");
+
+    fetch("/mainDash/monte_carlo_results/")
+        .then(res => res.json())
+        .then(data => {
+            const advancedBox = document.getElementById("advancedAnalysisResult");
+
+            if (data.status !== "success") {
+                const missingText = (data.missing_files || []).length
+                    ? `<p>Missing files: ${data.missing_files.join(", ")}</p>`
+                    : "";
+                advancedBox.innerHTML = `
+                    <h2 class="section-title">Monte Carlo Analysis</h2>
+                    <p>${data.message || "Monte Carlo results are not available."}</p>
+                    ${missingText}
+                `;
+                return;
+            }
+
+            const summary = data.summary || {};
+            const topNodes = data.top_nodes || [];
+            const typeSummary = data.type_summary || [];
+
+            const summaryHtml = `
+                <h3 class="section-title" style="font-size:1.03em;margin-top:0;">Summary</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Probability Root Impacted</th><td>${formatPercent(summary.probability_root_impacted)}</td></tr>
+                        <tr><th>Mean Root Delay (days)</th><td>${formatNumber(summary.mean_root_delay)}</td></tr>
+                        <tr><th>P90 Root Delay (days)</th><td>${formatNumber(summary.p90_root_delay)}</td></tr>
+                        <tr><th>Max Root Delay (days)</th><td>${formatNumber(summary.max_root_delay)}</td></tr>
+                        <tr><th>Mean Impacted Nodes</th><td>${formatNumber(summary.mean_impacted_nodes)}</td></tr>
+                    </tbody>
+                </table>
+            `;
+
+            const topRows = topNodes.map(row => `
+                <tr>
+                    <td>${row.disrupted_node_id || ""}</td>
+                    <td>${formatNumber(row.mean_root_delay)}</td>
+                    <td>${formatPercent(row.probability_root_impacted)}</td>
+                    <td>${formatNumber(row.mean_impacted_nodes)}</td>
+                    <td>${row.risk_bucket || ""}</td>
+                </tr>
+            `).join("");
+
+            const topTableHtml = `
+                <h3 class="section-title" style="font-size:1.03em;">Top Risky Nodes</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Disrupted Node</th>
+                            <th>Mean Root Delay</th>
+                            <th>Probability Root Impacted</th>
+                            <th>Mean Impacted Nodes</th>
+                            <th>Risk Bucket</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topRows || '<tr><td colspan="5">No node ranking data.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+
+            const typeRows = typeSummary.map(row => `
+                <tr>
+                    <td>${row.node_type || ""}</td>
+                    <td>${formatPercent(row.mean_probability_root_impacted)}</td>
+                    <td>${formatNumber(row.mean_root_delay)}</td>
+                    <td>${formatNumber(row.mean_impacted_nodes)}</td>
+                </tr>
+            `).join("");
+
+            const typeTableHtml = typeSummary.length ? `
+                <h3 class="section-title" style="font-size:1.03em;">Node Type Summary</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node Type</th>
+                            <th>Mean Probability Root Impacted</th>
+                            <th>Mean Root Delay</th>
+                            <th>Mean Impacted Nodes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${typeRows}
+                    </tbody>
+                </table>
+            ` : "";
+
+            advancedBox.innerHTML = `
+                <h2 class="section-title">Monte Carlo Analysis</h2>
+                ${summaryHtml}
+                ${topTableHtml}
+                ${typeTableHtml}
+            `;
+        })
+        .catch(error => {
+            console.error("Monte Carlo fetch error:", error);
+            document.getElementById("advancedAnalysisResult").innerHTML = `
+                <h2 class="section-title">Monte Carlo Analysis</h2>
+                <p>Unable to load Monte Carlo results.</p>
+            `;
+        });
+}
+
+function formatNumber(value) {
+    if (value === null || value === undefined || value === "") return "";
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value);
+    return Number.isInteger(num) ? String(num) : num.toFixed(2);
+}
+
+function formatPercent(value) {
+    if (value === null || value === undefined || value === "") return "";
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value);
+    return `${(num * 100).toFixed(1)}%`;
 }
 
 function runSupplierSelectionOptimization() {

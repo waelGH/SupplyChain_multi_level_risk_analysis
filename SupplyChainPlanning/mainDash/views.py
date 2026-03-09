@@ -1,5 +1,6 @@
 # Standard library imports
 import base64
+import importlib.util
 import io
 import json
 import math
@@ -9,6 +10,7 @@ import random
 import time
 import warnings
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from urllib.parse import urlencode
 from io import TextIOWrapper
 
@@ -482,6 +484,52 @@ def _safe_bool(value) -> bool:
     return str(value).strip().lower() in {"true", "1", "yes", "y"}
 
 
+def _mc_output_dir() -> Path:
+    return _repo_root() / "SC_data_generator"
+
+
+def _generator_script_path() -> Path:
+    return _mc_output_dir() / "case_study_data_generator.py"
+
+
+@lru_cache(maxsize=1)
+def _load_case_study_generator_module():
+    script_path = _generator_script_path()
+    if not script_path.exists():
+        raise FileNotFoundError(f"Missing generator script: {script_path}")
+
+    spec = importlib.util.spec_from_file_location("case_study_data_generator_runtime", script_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Unable to load module spec from {script_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_mc_csv(filename: str):
+    csv_path = _mc_output_dir() / filename
+    if not csv_path.exists():
+        return None
+    return pd.read_csv(csv_path)
+
+
+def _load_mc_report_text(filename: str = "vessel_case_study_mc_report.md"):
+    report_path = _mc_output_dir() / filename
+    if not report_path.exists():
+        return ""
+    return report_path.read_text(encoding="utf-8")
+
+
+def _risk_bucket_from_probability(probability_root_impacted: float) -> str:
+    score = _safe_float(probability_root_impacted, 0.0)
+    if score >= 0.4:
+        return "High"
+    if score >= 0.15:
+        return "Medium"
+    return "Low"
+
+
 def build_case_study_graph_model():
     nodes_df, edges_df = load_case_study_csvs(_repo_root())
     physical_graph = build_physical_graph(nodes_df, edges_df)
@@ -732,6 +780,168 @@ def simulate_plan(request):
     calculated_risk_scores = scan_risk_for_tree(schedule_tree, selected_production_chain)
 
     return JsonResponse({"status": "success", "risk_scores": calculated_risk_scores})
+
+
+def monte_carlo_results(request):
+    summary_df = _load_mc_csv("vessel_case_study_mc_summary.csv")
+    ranking_df = _load_mc_csv("vessel_case_study_mc_node_ranking.csv")
+    type_summary_df = _load_mc_csv("vessel_case_study_mc_type_summary.csv")
+    report_text = _load_mc_report_text()
+
+    missing_files = []
+    if summary_df is None:
+        missing_files.append("vessel_case_study_mc_summary.csv")
+    if ranking_df is None:
+        missing_files.append("vessel_case_study_mc_node_ranking.csv")
+
+    if missing_files:
+        return JsonResponse(
+            {
+                "status": "missing",
+                "message": "Monte Carlo output files not found. Run SC_data_generator first.",
+                "missing_files": missing_files,
+            }
+        )
+
+    summary_row = summary_df.iloc[0].to_dict() if not summary_df.empty else {}
+    top_nodes_df = ranking_df.copy()
+    if "risk_bucket" not in top_nodes_df.columns and "probability_root_impacted" in top_nodes_df.columns:
+        top_nodes_df["risk_bucket"] = top_nodes_df["probability_root_impacted"].apply(
+            _risk_bucket_from_probability
+        )
+    top_nodes_df = top_nodes_df.head(10)
+
+    type_rows = []
+    if type_summary_df is not None:
+        type_rows = type_summary_df.head(10).to_dict("records")
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "summary": summary_row,
+            "top_nodes": top_nodes_df.to_dict("records"),
+            "type_summary": type_rows,
+            "report_text": report_text,
+        }
+    )
+
+
+def deterministic_results(request):
+    try:
+        gen = _load_case_study_generator_module()
+        base_dir = _mc_output_dir()
+        nodes_path = base_dir / "__vessel_nodes_realistic_case_study_with_dates.csv"
+        edges_path = base_dir / "__vessel_edges_case_study.csv"
+        config_path = base_dir / "config.json"
+        nodes_df, edges_df, config = gen.load_generator_inputs(nodes_path, edges_path, config_path)
+        _, schedule_tree, schedule = gen.generate_baseline_data(nodes_df, edges_df, config, seed=42)
+    except FileNotFoundError as exc:
+        return JsonResponse(
+            {
+                "status": "missing",
+                "message": f"Missing deterministic simulation input file: {exc}",
+                "missing_files": [str(exc)],
+            }
+        )
+    except Exception as exc:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": f"Failed to initialize deterministic simulation model: {exc}",
+                "missing_files": [],
+            }
+        )
+
+    roots = [node for node, degree in schedule_tree.in_degree() if degree == 0]
+    if len(roots) != 1:
+        return JsonResponse(
+            {"status": "error", "message": "Invalid schedule tree root structure.", "missing_files": []}
+        )
+    root = roots[0]
+    candidate_nodes = sorted(node for node in schedule_tree.nodes() if node != root)
+    if not candidate_nodes:
+        return JsonResponse(
+            {"status": "error", "message": "No non-root nodes available for disruption.", "missing_files": []}
+        )
+
+    simulation_cfg = config.get("simulation", {})
+    delay_range = simulation_cfg.get("delay_days_range", [7, 45])
+    try:
+        delay_lo = int(delay_range[0])
+        delay_hi = int(delay_range[1])
+    except Exception:
+        delay_lo, delay_hi = 7, 45
+    if delay_lo > delay_hi:
+        delay_lo, delay_hi = delay_hi, delay_lo
+
+    scenario_rng = random.SystemRandom()
+    disrupted_node_id = scenario_rng.choice(candidate_nodes)
+    injected_delay_days = scenario_rng.randint(delay_lo, delay_hi)
+
+    try:
+        network_df = gen.simulate_network_disruption(
+            tree=schedule_tree,
+            schedule=schedule,
+            disrupted_node_id=disrupted_node_id,
+            delay_days=injected_delay_days,
+        )
+    except Exception as exc:
+        return JsonResponse(
+            {"status": "error", "message": f"Failed to run deterministic simulation: {exc}", "missing_files": []}
+        )
+
+    root_row = network_df[network_df["layer_id"] == 0].iloc[0]
+    impacted_count = int(network_df["impacted"].apply(_safe_bool).sum())
+    root_delay_days = _safe_int(root_row.get("finish_delay_days"), 0)
+    root_impacted = bool(root_delay_days > 0)
+
+    ranked_nodes = network_df.copy()
+    ranked_nodes["finish_delay_days"] = pd.to_numeric(ranked_nodes["finish_delay_days"], errors="coerce").fillna(0)
+    ranked_nodes["absorbed_by_buffer_days"] = pd.to_numeric(
+        ranked_nodes["absorbed_by_buffer_days"], errors="coerce"
+    ).fillna(0)
+    ranked_nodes["impacted"] = ranked_nodes["impacted"].apply(_safe_bool)
+    ranked_nodes["is_disrupted_node"] = ranked_nodes["is_disrupted_node"].apply(_safe_bool)
+    ranked_nodes = ranked_nodes.sort_values(
+        by=["finish_delay_days", "absorbed_by_buffer_days", "node_id"],
+        ascending=[False, False, True],
+    ).head(10)
+
+    absorber_node_id = ""
+    absorber_rows = network_df[
+        (pd.to_numeric(network_df.get("incoming_delay_days", 0), errors="coerce").fillna(0) > 0)
+        & (pd.to_numeric(network_df.get("absorbed_by_buffer_days", 0), errors="coerce").fillna(0) > 0)
+        & (pd.to_numeric(network_df.get("finish_delay_days", 0), errors="coerce").fillna(0) == 0)
+        & (~network_df["is_disrupted_node"].apply(_safe_bool))
+    ]
+    if not absorber_rows.empty:
+        absorber_node_id = str(absorber_rows.iloc[0].get("node_id") or "")
+
+    explanation = {
+        "absorber_node_id": absorber_node_id,
+        "stopped_before_root": bool(not root_impacted),
+        "reached_root": bool(root_impacted),
+    }
+
+    summary = {
+        "disrupted_node_id": disrupted_node_id,
+        "injected_delay_days": injected_delay_days,
+        "root_impacted": root_impacted,
+        "root_delay_days": root_delay_days,
+        "total_impacted_nodes": impacted_count,
+    }
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "summary": summary,
+            "top_nodes": ranked_nodes[
+                ["node_id", "finish_delay_days", "absorbed_by_buffer_days", "impacted", "is_disrupted_node"]
+            ].to_dict("records"),
+            "explanation": explanation,
+            "report_text": "",
+        }
+    )
 
 # def run_simulation(request):
 #     template = loader.get_template("mainDash/run_simulation.html")
