@@ -163,9 +163,9 @@ function escapeHtml(value) {
 }
 
 function renderRiskSpectrum(riskScore, riskLevel) {
-    const safeRiskScore = Number.isFinite(riskScore) ? riskScore : 0;
-    const minValue = Math.min(-5, Math.floor(safeRiskScore) - 1);
-    const maxValue = Math.max(5, Math.ceil(safeRiskScore) + 1);
+    const safeRiskScore = Number.isFinite(riskScore) ? Math.max(0, Math.min(1, riskScore)) : 0;
+    const minValue = 0;
+    const maxValue = 1;
     const width = 760;
     const height = 220;
     const left = 40;
@@ -177,12 +177,12 @@ function renderRiskSpectrum(riskScore, riskLevel) {
     const scaleX = (value) => left + ((value - minValue) / (maxValue - minValue)) * chartWidth;
 
     const bands = [
-        { start: minValue, end: -3, color: "#d32f2f", label: "🔴 High Risk (≤ -3)" },
-        { start: -3, end: -1, color: "#f57c00", label: "🟠 Moderate (-3 to -1)" },
-        { start: -1, end: 0, color: "#fbc02d", label: "🟡 Mild (-1 to 0)" },
-        { start: 0, end: 2, color: "#388e3c", label: "🟢 Stable (0 to +2)" },
-        { start: 2, end: maxValue, color: "#1976d2", label: "🔵 Positive (> +2)" },
-    ].filter((band) => band.end > band.start);
+        { start: 0.0, end: 0.2, color: "#1976d2", label: "🔵 Positive (0.0 to 0.2)" },
+        { start: 0.2, end: 0.4, color: "#388e3c", label: "🟢 Stable (0.2 to 0.4)" },
+        { start: 0.4, end: 0.6, color: "#fbc02d", label: "🟡 Mild (0.4 to 0.6)" },
+        { start: 0.6, end: 0.8, color: "#f57c00", label: "🟠 Moderate (0.6 to 0.8)" },
+        { start: 0.8, end: 1.0, color: "#d32f2f", label: "🔴 High Risk (0.8 to 1.0)" },
+    ];
 
     const bandRects = bands.map((band) => {
         const x = scaleX(band.start);
@@ -191,12 +191,12 @@ function renderRiskSpectrum(riskScore, riskLevel) {
     }).join("");
 
     const scoreX = scaleX(Math.max(minValue, Math.min(maxValue, safeRiskScore)));
-    const ticks = [minValue, -3, -1, 0, 2, maxValue]
+    const ticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
         .filter((value, index, array) => array.indexOf(value) === index)
         .sort((a, b) => a - b);
     const tickMarks = ticks.map((tick) => `
         <line x1="${scaleX(tick)}" y1="${axisY - 8}" x2="${scaleX(tick)}" y2="${axisY + 8}" stroke="#4a4a4a" stroke-width="1.5"></line>
-        <text x="${scaleX(tick) - 12}" y="${axisY + 28}" font-size="12" fill="#2b2b2b">${tick}</text>
+        <text x="${scaleX(tick) - 12}" y="${axisY + 28}" font-size="12" fill="#2b2b2b">${tick.toFixed(1)}</text>
     `).join("");
     const levelEmoji = (riskLevel && riskLevel.emoji) ? riskLevel.emoji : "";
     const levelLabel = (riskLevel && riskLevel.label) ? riskLevel.label : "Unknown";
@@ -213,12 +213,87 @@ function renderRiskSpectrum(riskScore, riskLevel) {
             <line x1="${scoreX}" y1="${bandTop - 34}" x2="${scoreX}" y2="${bandTop + bandHeight + 8}" stroke="#111" stroke-width="2"></line>
             <circle cx="${scoreX}" cy="${bandTop - 37}" r="5" fill="#111"></circle>
             <text x="${Math.max(left, Math.min(width - right - 86, scoreX + 8))}" y="${bandTop - 40}" font-size="13" fill="#111">${safeRiskScore.toFixed(3)}</text>
-            <text x="${left}" y="34" font-size="12" fill="#333">🔴 High</text>
-            <text x="${left + 112}" y="34" font-size="12" fill="#333">🟠 Moderate</text>
-            <text x="${left + 268}" y="34" font-size="12" fill="#333">🟡 Mild</text>
-            <text x="${left + 362}" y="34" font-size="12" fill="#333">🟢 Stable</text>
-            <text x="${left + 468}" y="34" font-size="12" fill="#333">🔵 Positive</text>
+            <text x="${left}" y="${axisY + 46}" font-size="12" fill="#333">Low Risk</text>
+            <text x="${width - right - 58}" y="${axisY + 46}" font-size="12" fill="#333">High Risk</text>
+            <text x="${left}" y="34" font-size="12" fill="#333">🔵 Positive</text>
+            <text x="${left + 116}" y="34" font-size="12" fill="#333">🟢 Stable</text>
+            <text x="${left + 226}" y="34" font-size="12" fill="#333">🟡 Mild</text>
+            <text x="${left + 318}" y="34" font-size="12" fill="#333">🟠 Moderate</text>
+            <text x="${left + 456}" y="34" font-size="12" fill="#333">🔴 High Risk</text>
         </svg>
+    `;
+}
+
+function formatGdeltDate(rawValue) {
+    const raw = String(rawValue ?? "").trim();
+    if (/^\d{8}$/.test(raw)) {
+        return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+    }
+    return raw;
+}
+
+function renderGdeltEventsTable(events, totalInRadius, truncated) {
+    const safeEvents = Array.isArray(events) ? events : [];
+    const total = Number.isFinite(totalInRadius) ? Math.max(0, Math.round(totalInRadius)) : safeEvents.length;
+    const shown = safeEvents.length;
+    const summaryText = truncated
+        ? `Showing ${shown} of ${total} events in radius (latest rows shown).`
+        : `Showing ${shown} events in radius.`;
+
+    if (!shown) {
+        return `
+            <h3 style="margin:20px 0 8px 0;">Pulled GDELT Events</h3>
+            <p style="margin:0;">No GDELT events found in the selected radius.</p>
+        `;
+    }
+
+    const rowsHtml = safeEvents.map((event) => {
+        const avgTone = Number(event.avgtone);
+        const avgImpact = Number(event.goldsteinscale);
+        const numArticles = Number(event.numarticles);
+        const sourceUrl = String(event.sourceurl || "");
+        return `
+            <tr>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${escapeHtml(formatGdeltDate(event.sqldate))}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${escapeHtml(event.globaleventid)}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${escapeHtml(event.cameocodedescription)}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${Number.isFinite(avgTone) ? avgTone.toFixed(2) : ""}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${Number.isFinite(avgImpact) ? avgImpact.toFixed(2) : ""}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${Number.isFinite(numArticles) ? Math.round(numArticles) : 0}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${escapeHtml(event.actor1name)}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${escapeHtml(event.actor2name)}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">${escapeHtml(event.actiongeofullname)}</td>
+                <td style="padding:8px;border:1px solid #d5d5d5;">
+                    ${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Open</a>` : ""}
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    return `
+        <h3 style="margin:20px 0 8px 0;">Pulled GDELT Events</h3>
+        <p style="margin:0 0 10px 0;">${escapeHtml(summaryText)}</p>
+        <div style="overflow-x:auto; background:#fff; border:1px solid #d8d8d8; border-radius:6px;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.92em; min-width:1080px;">
+                <thead style="background:#f5f7fb;">
+                    <tr>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Date</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Event ID</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Event Description</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Avg Tone</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Impact</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Articles</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Actor 1</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Actor 2</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Location</th>
+                        <th style="padding:8px;border:1px solid #d5d5d5;text-align:left;">Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+        </div>
     `;
 }
 
@@ -251,6 +326,8 @@ function performAnalysisForPair() {
             const safeEventsInWindow = Number.isFinite(eventsInWindow) ? Math.round(eventsInWindow) : 0;
             const eventsInRadius = Number(scanDetails.events_in_radius);
             const safeEventsInRadius = Number.isFinite(eventsInRadius) ? Math.round(eventsInRadius) : 0;
+            const gdeltEvents = Array.isArray(scanDetails.gdelt_events) ? scanDetails.gdelt_events : [];
+            const eventsTruncated = Boolean(scanDetails.gdelt_events_truncated);
             document.getElementById("result").innerHTML = `
                 <h2>News Risk Scan Result</h2>
                 <p><strong>Node:</strong> ${escapeHtml(data.node_name)} (${escapeHtml(data.node_type)})</p>
@@ -261,6 +338,7 @@ function performAnalysisForPair() {
                 <p><strong>Radius Used:</strong> ${safeRadius.toFixed(0)} miles</p>
                 <p><strong>Events in Radius:</strong> ${safeEventsInRadius} (from ${safeEventsInWindow} GDELT events in the last 30 days)</p>
                 ${renderRiskSpectrum(numericRisk, riskLevel)}
+                ${renderGdeltEventsTable(gdeltEvents, safeEventsInRadius, eventsTruncated)}
             `;
         })
         .catch(error => {

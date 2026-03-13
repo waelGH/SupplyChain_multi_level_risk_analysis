@@ -282,61 +282,42 @@ def extract_text_from_url(url):
 
 def calculate_risk_score(filtered_event_df): 
     """
-    Calculate a risk score from the extracted GDELT data
-    The risk score is approximation of possible disruptions
-    It takes into account: 
-        1) number of negative events
-        2) number of negative events mentions
-        3) qualitative analysis of articles titles/content
+    Calculate raw risk score from GDELT event fields.
+    Formula:
+        raw_risk_score = average_tone + average_impact
     """ 
-    
-    nb_events = 0
-    events_tone = 0
-    impact = 0
-    for index, row in filtered_event_df.iterrows():
-        globaleventid = row['globaleventid']
-        avgtone = row['avgtone']
-        numarticles = row['numarticles']
-        sourceurl = row['sourceurl']
-        GoldsteinScale = row['goldsteinscale']
-        cameocodedescription = row['cameocodedescription']
-        
-        # print('-------------------------')
-        # print(globaleventid)
-        # print(avgtone)
-        # print(numarticles)
-        # print(sourceurl)
-        # print(GoldsteinScale)
-        # print(cameocodedescription)
-        # print('-------------------------')   
-        
-        # Example usage
-        page_text = extract_text_from_url(sourceurl)
-        
-        # calculate
-        nb_events = nb_events + 1
-        events_tone = events_tone + avgtone
-        impact = impact + GoldsteinScale
-        
-    #average tone and impact
-    if nb_events == 0:
-        avg_tone = 0
-        avg_impact = 0
-    else:
-        avg_tone = events_tone/nb_events
-        avg_impact = impact/nb_events
+    if filtered_event_df is None or filtered_event_df.empty:
+        print("average tone: 0.0")
+        print("average impact: 0.0")
+        print("raw risk score: 0.0")
+        return 0.0
 
-    print('average tone',avg_tone)
-    print('average impact',avg_impact)
-    
-    risk_score = (avg_tone + avg_impact) / 2
-        
-    return risk_score
+    tone_series = (
+        pd.to_numeric(filtered_event_df["avgtone"], errors="coerce")
+        if "avgtone" in filtered_event_df.columns
+        else pd.Series(dtype=float)
+    )
+    impact_series = (
+        pd.to_numeric(filtered_event_df["goldsteinscale"], errors="coerce")
+        if "goldsteinscale" in filtered_event_df.columns
+        else pd.Series(dtype=float)
+    )
+
+    avg_tone = float(tone_series.mean()) if not tone_series.empty else 0.0
+    avg_impact = float(impact_series.mean()) if not impact_series.empty else 0.0
+    raw_risk_score = avg_tone + avg_impact
+
+    print("average tone:", avg_tone)
+    print("average impact:", avg_impact)
+    print("raw risk score:", raw_risk_score)
+
+    return raw_risk_score
 
 def analyze_supplier_risk_from_news_workflow(
     supplier_name, supplier_lat, supplier_lon, return_details=False
 ):
     radius_miles = 50
+    max_events_rows = 100
     scan_details = {
         "risk_score": 0.0,
         "scanned_location": "Unknown",
@@ -344,6 +325,9 @@ def analyze_supplier_risk_from_news_workflow(
         "events_in_window": 0,
         "events_in_radius": 0,
         "articles_count": 0,
+        "gdelt_events": [],
+        "gdelt_events_returned": 0,
+        "gdelt_events_truncated": False,
     }
 
     try:
@@ -394,6 +378,11 @@ def analyze_supplier_risk_from_news_workflow(
     Last_reports = gd.Search(date=[start_date_str, end_date_str], normcols=True)
     if Last_reports is None:
         Last_reports = pd.DataFrame()
+
+    # Save to disk
+    output_path = Path(settings.BASE_DIR) / "gdelt_reports.csv"
+    Last_reports.to_csv(output_path, index=False)
+    
     scan_details["events_in_window"] = len(Last_reports)
     print("The number of GDELT reports in the last 30 days is", len(Last_reports)) 
     
@@ -401,6 +390,47 @@ def analyze_supplier_risk_from_news_workflow(
         ## Filter events by latitude and longitude ##
         filtered_df = filter_events_within_radius(Last_reports, supplier_lat, supplier_lon, radius_miles=radius_miles)
         scan_details["events_in_radius"] = len(filtered_df)
+
+        if return_details:
+            event_columns = [
+                "globaleventid",
+                "sqldate",
+                "cameocodedescription",
+                "avgtone",
+                "goldsteinscale",
+                "numarticles",
+                "actor1name",
+                "actor2name",
+                "actiongeofullname",
+                "sourceurl",
+            ]
+            available_event_columns = [col for col in event_columns if col in filtered_df.columns]
+            events_df = filtered_df[available_event_columns].copy()
+            sort_columns = [col for col in ["sqldate", "numarticles"] if col in events_df.columns]
+            if sort_columns:
+                events_df = events_df.sort_values(by=sort_columns, ascending=False, kind="stable")
+            events_df = events_df.head(max_events_rows)
+            events_df = events_df.replace({np.nan: None})
+
+            event_rows = []
+            for _, event in events_df.iterrows():
+                event_rows.append(
+                    {
+                        "globaleventid": str(event.get("globaleventid") or ""),
+                        "sqldate": str(event.get("sqldate") or ""),
+                        "cameocodedescription": str(event.get("cameocodedescription") or ""),
+                        "avgtone": _safe_float(event.get("avgtone"), 0.0),
+                        "goldsteinscale": _safe_float(event.get("goldsteinscale"), 0.0),
+                        "numarticles": _safe_int(event.get("numarticles"), 0),
+                        "actor1name": str(event.get("actor1name") or ""),
+                        "actor2name": str(event.get("actor2name") or ""),
+                        "actiongeofullname": str(event.get("actiongeofullname") or ""),
+                        "sourceurl": str(event.get("sourceurl") or ""),
+                    }
+                )
+            scan_details["gdelt_events"] = event_rows
+            scan_details["gdelt_events_returned"] = len(event_rows)
+            scan_details["gdelt_events_truncated"] = len(filtered_df) > len(event_rows)
 
         if "numarticles" in filtered_df.columns:
             scan_details["articles_count"] = int(
@@ -410,12 +440,13 @@ def analyze_supplier_risk_from_news_workflow(
             scan_details["articles_count"] = len(filtered_df)
         
         ## Calculate risk score from collected events
-        risk_score_from_gdelt = calculate_risk_score(filtered_df)
-        print('RISK score for this item.......',risk_score_from_gdelt)
-        risk_score = risk_score_from_gdelt
+        raw_risk_score = calculate_risk_score(filtered_df)
+        risk_score = float(np.clip((raw_risk_score + 5.0) / 10.0, 0.0, 1.0))
+        print("RISK score (raw):", raw_risk_score)
+        print("RISK score (normalized 0-1):", risk_score)
     else: 
         print('No report detected.....')
-        risk_score = 0
+        risk_score = 0.0
 
     scan_details["risk_score"] = risk_score
     return scan_details if return_details else risk_score
@@ -423,15 +454,16 @@ def analyze_supplier_risk_from_news_workflow(
 
 def _risk_level_from_score(risk_score):
     score = _safe_float(risk_score, 0.0)
-    if score <= -3:
-        return {"label": "High Risk", "emoji": "🔴", "range": "≤ -3", "code": "high"}
-    if score <= -1:
-        return {"label": "Moderate", "emoji": "🟠", "range": "-3 to -1", "code": "moderate"}
-    if score <= 0:
-        return {"label": "Mild", "emoji": "🟡", "range": "-1 to 0", "code": "mild"}
-    if score <= 2:
-        return {"label": "Stable", "emoji": "🟢", "range": "0 to +2", "code": "stable"}
-    return {"label": "Positive", "emoji": "🔵", "range": "> +2", "code": "positive"}
+    score = max(0.0, min(1.0, score))
+    if score >= 0.8:
+        return {"label": "High Risk", "emoji": "🔴", "range": "0.8 to 1.0", "code": "high"}
+    if score >= 0.6:
+        return {"label": "Moderate", "emoji": "🟠", "range": "0.6 to 0.8", "code": "moderate"}
+    if score >= 0.4:
+        return {"label": "Mild", "emoji": "🟡", "range": "0.4 to 0.6", "code": "mild"}
+    if score >= 0.2:
+        return {"label": "Stable", "emoji": "🟢", "range": "0.2 to 0.4", "code": "stable"}
+    return {"label": "Positive", "emoji": "🔵", "range": "0.0 to 0.2", "code": "positive"}
 
 
 ##############################################################
@@ -826,6 +858,149 @@ def monte_carlo_results(request):
     )
 
 
+def _load_or_create_selected_production_chain(request, schedule_tree):
+    selected_chain_json = request.session.get("selected_production_chain")
+    if selected_chain_json:
+        try:
+            selected_chain = json.loads(selected_chain_json)
+            if isinstance(selected_chain, dict):
+                return selected_chain, False
+        except Exception:
+            pass
+
+    nodes_df, edges_df = load_case_study_csvs(_repo_root())
+    supplier_options = build_supplier_options(nodes_df, edges_df)
+    selected_chain = select_suppliers_for_tree(
+        schedule_tree,
+        supplier_options=supplier_options,
+        seed=42,
+    )
+    request.session["selected_production_chain"] = json.dumps(selected_chain)
+    request.session["plan_generated_at"] = datetime.now().isoformat()
+    return selected_chain, True
+
+
+def _supplier_assignments_by_node(schedule_tree, selected_chain):
+    assignments = {}
+    for node_id in schedule_tree.nodes():
+        node_name = str(schedule_tree.nodes[node_id].get("name") or node_id)
+        selected_entry = selected_chain.get(node_name)
+        if not selected_entry:
+            continue
+
+        supplier_name = str(selected_entry[0]) if len(selected_entry) > 0 else ""
+        supplier_info = selected_entry[1] if len(selected_entry) > 1 else {}
+        if not isinstance(supplier_info, dict):
+            supplier_info = {}
+
+        assignments[node_id] = {
+            "node_name": node_name,
+            "supplier_name": supplier_name,
+            "Lat": _safe_float(supplier_info.get("Lat"), 0.0),
+            "Lon": _safe_float(supplier_info.get("Lon"), 0.0),
+            "country": str(supplier_info.get("country") or ""),
+            "delay_risk": _safe_int(supplier_info.get("delay_risk"), 0),
+            "supplier_node_id": str(supplier_info.get("supplier_node_id") or ""),
+        }
+    return assignments
+
+
+def _sample_delay_days_from_lognormal(*, risk_score: float, rng, sigma: float, max_delay_days: int) -> int:
+    bounded_risk = max(0.0, min(1.0, _safe_float(risk_score, 0.0)))
+    if bounded_risk <= 0.0:
+        return 0
+
+    mean_delay_days = 1.0 + bounded_risk * (max_delay_days * 0.5)
+    mu = np.log(max(mean_delay_days, 1e-6)) - 0.5 * (sigma**2)
+    sampled = float(rng.lognormal(mean=mu, sigma=sigma))
+    sampled_days = max(1, int(round(sampled)))
+    return min(sampled_days, max_delay_days)
+
+
+def _simulate_network_disruption_multi(*, tree, schedule, injected_delay_by_node):
+    simulated_finish = {}
+    simulated_start = {}
+    incoming_delay_by_node = {}
+    absorbed_by_buffer_by_node = {}
+
+    bottom_up_nodes = sorted(
+        tree.nodes(),
+        key=lambda node_id: (schedule[node_id]["layer_id"], str(node_id)),
+        reverse=True,
+    )
+
+    for node_id in bottom_up_nodes:
+        rec = schedule[node_id]
+        baseline_start = rec["integration_start"]
+        baseline_finish = rec["need_by_date"]
+        node_buffer_days = int(rec.get("sampled_buffer_days") or 0)
+
+        child_induced_delay = 0
+        if baseline_start is not None:
+            for child_id in tree.successors(node_id):
+                child_finish = simulated_finish[child_id]
+                child_lateness = (child_finish - baseline_start).days
+                child_induced_delay = max(child_induced_delay, max(0, child_lateness))
+
+        injected_delay = max(0, _safe_int(injected_delay_by_node.get(node_id), 0))
+        incoming_delay_days = max(injected_delay, child_induced_delay)
+        absorbed_by_buffer_days = min(node_buffer_days, incoming_delay_days)
+        finish_delay_days = max(0, incoming_delay_days - node_buffer_days)
+
+        sim_finish = baseline_finish + timedelta(days=finish_delay_days)
+        sim_start = (
+            baseline_start + timedelta(days=finish_delay_days)
+            if baseline_start is not None
+            else None
+        )
+
+        simulated_finish[node_id] = sim_finish
+        simulated_start[node_id] = sim_start
+        incoming_delay_by_node[node_id] = incoming_delay_days
+        absorbed_by_buffer_by_node[node_id] = absorbed_by_buffer_days
+
+    rows = []
+    ordered_nodes = sorted(
+        tree.nodes(),
+        key=lambda node_id: (schedule[node_id]["layer_id"], str(node_id)),
+    )
+    for node_id in ordered_nodes:
+        rec = schedule[node_id]
+        baseline_start = rec["integration_start"]
+        baseline_finish = rec["need_by_date"]
+        sim_start = simulated_start[node_id]
+        sim_finish = simulated_finish[node_id]
+        finish_delay_days = int((sim_finish - baseline_finish).days)
+        start_delay_days = (
+            int((sim_start - baseline_start).days)
+            if baseline_start is not None and sim_start is not None
+            else 0
+        )
+        injected_delay_days = max(0, _safe_int(injected_delay_by_node.get(node_id), 0))
+
+        rows.append(
+            {
+                "node_id": node_id,
+                "node_type": rec["node_type"],
+                "layer_id": rec["layer_id"],
+                "original_start_date": baseline_start.isoformat() if baseline_start is not None else "",
+                "original_finish_date": baseline_finish.isoformat(),
+                "simulated_start_date": sim_start.isoformat() if sim_start is not None else "",
+                "simulated_finish_date": sim_finish.isoformat(),
+                "start_delay_days": start_delay_days,
+                "finish_delay_days": finish_delay_days,
+                "incoming_delay_days": incoming_delay_by_node[node_id],
+                "absorbed_by_buffer_days": absorbed_by_buffer_by_node[node_id],
+                "sampled_buffer_days": int(rec.get("sampled_buffer_days") or 0),
+                "impacted": bool(finish_delay_days > 0),
+                "is_disrupted_node": bool(injected_delay_days > 0),
+                "injected_delay_days": injected_delay_days,
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
 def deterministic_results(request):
     try:
         gen = _load_case_study_generator_module()
@@ -943,110 +1118,235 @@ def deterministic_results(request):
         }
     )
 
-# def run_simulation(request):
-#     template = loader.get_template("mainDash/run_simulation.html")
 
-#     #################################################
-#     ############# Upload data #######################
-#     #################################################
-#     # Upload all data from the database
-#     uploaded_case_systems = Case_system.objects.all()
-#     uploaded_components = Component.objects.all()
-#     uploaded_material_suppliers = MaterialSupplier.objects.all()
-#     uploaded_parts = Part.objects.all()
-#     uploaded_part_suppliers = PartSupplier.objects.all()
-#     uploaded_materials = Material.objects.all()
-#     uploaded_material_suppliers = MaterialSupplier.objects.all()
+def scan_based_simulation_results(request):
+    try:
+        gen = _load_case_study_generator_module()
+        base_dir = _mc_output_dir()
+        nodes_path = base_dir / "__vessel_nodes_realistic_case_study_with_dates.csv"
+        edges_path = base_dir / "__vessel_edges_case_study.csv"
+        config_path = base_dir / "config.json"
+        nodes_df, edges_df, config = gen.load_generator_inputs(nodes_path, edges_path, config_path)
+        _, schedule_tree, schedule = gen.generate_baseline_data(nodes_df, edges_df, config, seed=42)
+    except FileNotFoundError as exc:
+        return JsonResponse(
+            {
+                "status": "missing",
+                "message": f"Missing scan-based simulation input file: {exc}",
+                "missing_files": [str(exc)],
+            }
+        )
+    except Exception as exc:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": f"Failed to initialize scan-based simulation model: {exc}",
+                "missing_files": [],
+            }
+        )
 
-#     # Populate the supply chain tree structure
-#     # Define root node (system)
-#     if uploaded_case_systems.exists():
-#         case = uploaded_case_systems.first()
-#         vessel_system = Node("vessel", "system",{},0)
+    try:
+        selected_chain, auto_plan_generated = _load_or_create_selected_production_chain(request, schedule_tree)
+        assignments = _supplier_assignments_by_node(schedule_tree, selected_chain)
+    except Exception as exc:
+        return JsonResponse(
+            {"status": "error", "message": f"Unable to load assigned suppliers: {exc}", "missing_files": []}
+        )
 
-#     # define component nodes
-#     ls_components = []
-#     for comp in uploaded_components:
-#         if comp.case_system == case:
-#             # determine the list of suppliers for this component
-#             comp_suppliers = ComponentSupplier.objects.filter(component=comp)
-#             ls_suppliers = {}
-#             for sup in comp_suppliers:
-#                 ls_suppliers[sup.supplier_name] = {
-#                     "Lat": sup.Lat,
-#                     "Lon": sup.Lon,
-#                     "country": sup.country
-#                 }
-#             # add to the components list
-#             ls_components.append(Node(comp.component_name, "component",ls_suppliers,None,0))
+    cfg = config.get("scan_based_simulation", {})
+    risk_detection_threshold = max(0.0, min(1.0, _safe_float(cfg.get("risk_detection_threshold"), 0.6)))
+    lognormal_sigma = max(0.05, _safe_float(cfg.get("lognormal_sigma"), 0.55))
+    max_delay_days = max(1, _safe_int(cfg.get("max_delay_days"), 45))
+    rng_seed = _safe_int(cfg.get("seed"), 42)
+    rng = np.random.default_rng(rng_seed)
 
-#     # define part nodes and raw material nodes
-#     ls_parts = []
-#     for part in uploaded_parts:
-#         if part.component in uploaded_components:
-#             # determine the list of suppliers for this part
-#             part_suppliers = PartSupplier.objects.filter(part=part)
-#             ls_suppliers = {}
-#             for sup in part_suppliers:
-#                 ls_suppliers[sup.supplier_name] = {
-#                     "Lat": sup.Lat,
-#                     "Lon": sup.Lon,
-#                     "country": sup.country,
-#                     "NAIC_code": sup.NAIC_code,
-#                     "HS_code": sup.HS_code,
-#                     "production_time_days": sup.production_time_days,
-#                     "shipping_time_days": sup.shipping_time_days
-#                 }
-#             # add to the components list
-#             part_node = Node(part.part_name, "part",ls_suppliers,part.date_req,part.quantity)
-            
-#             # add raw materials as children of the part
-#             materials = Material.objects.filter(part=part)
-#             for mat in materials:
-#                 # determine the list of suppliers for this material
-#                 mat_suppliers = MaterialSupplier.objects.filter(material=mat)
-#                 ls_suppliers = {}
-#                 for sup in mat_suppliers:
-#                     ls_suppliers[sup.supplier_name] = {
-#                         "Lat": sup.Lat,
-#                         "Lon": sup.Lon,
-#                         "country": sup.country,
-#                         "NAIC_code": sup.NAIC_code,
-#                         "HS_code": sup.HS_code,
-#                         "production_time_days": sup.production_time_days,
-#                         "shipping_time_days": sup.shipping_time_days
-#                     }
-#                 mat_node = Node(mat.material_name, "raw_material",ls_suppliers,mat.date_req,mat.quantity)
-#                 part_node.add_child(mat_node)
-                
-#             # add the part node to the corresponding component
-#             for comp_node in ls_components:
-#                 if comp_node.name == part.component.component_name:
-#                     comp_node.add_child(part_node)
+    supplier_scan_rows = []
+    injected_delay_by_node = {}
+    risk_cache = {}
+    ordered_node_ids = sorted(
+        schedule_tree.nodes(),
+        key=lambda node_id: (schedule[node_id]["layer_id"], str(node_id)),
+    )
+    for node_id in ordered_node_ids:
+        rec = schedule[node_id]
+        node_name = str(schedule_tree.nodes[node_id].get("name") or node_id)
+        node_type = str(rec.get("node_type") or schedule_tree.nodes[node_id].get("node_type") or "unknown")
+        assignment = assignments.get(node_id)
+        if not assignment:
+            supplier_scan_rows.append(
+                {
+                    "node_id": node_id,
+                    "node_name": node_name,
+                    "node_type": node_type,
+                    "layer_id": _safe_int(rec.get("layer_id"), 0),
+                    "supplier_name": "",
+                    "risk_score": 0.0,
+                    "risk_detected": False,
+                    "scanned": False,
+                    "injected_delay_days": 0,
+                    "scan_error": "",
+                }
+            )
+            continue
 
-#     # add children to the root noded
-#     for comp in ls_components:
-#         if comp.children:  # only add components that have parts
-#             vessel_system.add_child(comp)
+        supplier_name = str(assignment.get("supplier_name") or "")
+        supplier_lat = _safe_float(assignment.get("Lat"), 0.0)
+        supplier_lon = _safe_float(assignment.get("Lon"), 0.0)
+        can_scan = bool(supplier_lat != 0.0 or supplier_lon != 0.0)
+        scan_error = ""
+        risk_score = 0.0
 
-#     # print('--------------------------')
-#     # print_tree(vessel_system)
-#     # print('--------------------------')
+        if can_scan:
+            cache_key = (supplier_name, round(supplier_lat, 6), round(supplier_lon, 6))
+            if cache_key in risk_cache:
+                risk_score = risk_cache[cache_key]
+            else:
+                try:
+                    risk_score = _safe_float(
+                        analyze_supplier_risk_from_news_workflow(supplier_name, supplier_lat, supplier_lon),
+                        0.0,
+                    )
+                except Exception as exc:
+                    scan_error = str(exc)
+                    risk_score = 0.0
+                risk_cache[cache_key] = risk_score
 
-#     #################################################
-#     ############# Pick a production chain ###########
-#     #################################################
-#     selected_production_chain = select_random_suppliers(vessel_system)
+        risk_detected = bool(can_scan and risk_score >= risk_detection_threshold)
+        injected_delay_days = (
+            _sample_delay_days_from_lognormal(
+                risk_score=risk_score,
+                rng=rng,
+                sigma=lognormal_sigma,
+                max_delay_days=max_delay_days,
+            )
+            if risk_detected
+            else 0
+        )
+        if injected_delay_days > 0:
+            injected_delay_by_node[node_id] = injected_delay_days
 
-#     # Scan over the production chain and analyze risk for each supplier
-#     calculated_risk_scores = scan_risk_for_nodes(vessel_system,selected_production_chain)
-#     print('--------------------------')
-#     print('RISK analysis for the production chain')
-#     print(calculated_risk_scores)
-#     print('--------------------------')
+        supplier_scan_rows.append(
+            {
+                "node_id": node_id,
+                "node_name": node_name,
+                "node_type": node_type,
+                "layer_id": _safe_int(rec.get("layer_id"), 0),
+                "supplier_name": supplier_name,
+                "risk_score": max(0.0, min(1.0, risk_score)),
+                "risk_detected": risk_detected,
+                "scanned": can_scan,
+                "injected_delay_days": injected_delay_days,
+                "scan_error": scan_error,
+            }
+        )
 
-#     context = {}
-#     return HttpResponse(template.render(context, request))
+    try:
+        network_df = _simulate_network_disruption_multi(
+            tree=schedule_tree,
+            schedule=schedule,
+            injected_delay_by_node=injected_delay_by_node,
+        )
+    except Exception as exc:
+        return JsonResponse(
+            {"status": "error", "message": f"Failed to run scan-based simulation: {exc}", "missing_files": []}
+        )
+
+    roots = [node for node, degree in schedule_tree.in_degree() if degree == 0]
+    if len(roots) != 1:
+        return JsonResponse(
+            {"status": "error", "message": "Invalid schedule tree root structure.", "missing_files": []}
+        )
+    root = roots[0]
+    root_row = network_df[network_df["node_id"] == root].iloc[0]
+    root_delay_days = _safe_int(root_row.get("finish_delay_days"), 0)
+    root_impacted = bool(root_delay_days > 0)
+    impacted_count = int(network_df["impacted"].apply(_safe_bool).sum())
+
+    ranked_nodes = network_df.copy()
+    ranked_nodes["finish_delay_days"] = pd.to_numeric(ranked_nodes["finish_delay_days"], errors="coerce").fillna(0)
+    ranked_nodes["absorbed_by_buffer_days"] = pd.to_numeric(
+        ranked_nodes["absorbed_by_buffer_days"], errors="coerce"
+    ).fillna(0)
+    ranked_nodes["injected_delay_days"] = pd.to_numeric(
+        ranked_nodes["injected_delay_days"], errors="coerce"
+    ).fillna(0)
+    ranked_nodes["impacted"] = ranked_nodes["impacted"].apply(_safe_bool)
+    ranked_nodes["is_disrupted_node"] = ranked_nodes["is_disrupted_node"].apply(_safe_bool)
+
+    scan_by_node = {row["node_id"]: row for row in supplier_scan_rows}
+    ranked_nodes["supplier_name"] = ranked_nodes["node_id"].map(
+        lambda node_id: str((assignments.get(node_id) or {}).get("supplier_name") or "")
+    )
+    ranked_nodes["risk_score"] = ranked_nodes["node_id"].map(
+        lambda node_id: _safe_float((scan_by_node.get(node_id) or {}).get("risk_score"), 0.0)
+    )
+
+    ranked_nodes = ranked_nodes.sort_values(
+        by=["finish_delay_days", "injected_delay_days", "absorbed_by_buffer_days", "node_id"],
+        ascending=[False, False, False, True],
+    ).head(15)
+
+    absorber_node_id = ""
+    absorber_rows = network_df[
+        (pd.to_numeric(network_df.get("incoming_delay_days", 0), errors="coerce").fillna(0) > 0)
+        & (pd.to_numeric(network_df.get("absorbed_by_buffer_days", 0), errors="coerce").fillna(0) > 0)
+        & (pd.to_numeric(network_df.get("finish_delay_days", 0), errors="coerce").fillna(0) == 0)
+        & (pd.to_numeric(network_df.get("injected_delay_days", 0), errors="coerce").fillna(0) == 0)
+    ]
+    if not absorber_rows.empty:
+        absorber_node_id = str(absorber_rows.iloc[0].get("node_id") or "")
+
+    scanned_suppliers = int(sum(1 for row in supplier_scan_rows if row["scanned"]))
+    risky_suppliers = int(sum(1 for row in supplier_scan_rows if row["risk_detected"]))
+    nodes_with_injected_delay = int(sum(1 for delay in injected_delay_by_node.values() if delay > 0))
+    total_injected_delay_days = int(sum(injected_delay_by_node.values()))
+
+    summary = {
+        "root_impacted": root_impacted,
+        "root_delay_days": root_delay_days,
+        "total_impacted_nodes": impacted_count,
+        "scanned_suppliers": scanned_suppliers,
+        "risky_suppliers_detected": risky_suppliers,
+        "nodes_with_injected_delay": nodes_with_injected_delay,
+        "total_injected_delay_days": total_injected_delay_days,
+        "risk_detection_threshold": risk_detection_threshold,
+        "lognormal_sigma": lognormal_sigma,
+        "max_delay_days": max_delay_days,
+        "auto_plan_generated": bool(auto_plan_generated),
+    }
+
+    explanation = {
+        "absorber_node_id": absorber_node_id,
+        "stopped_before_root": bool(not root_impacted),
+        "reached_root": bool(root_impacted),
+        "seed": rng_seed,
+    }
+
+    supplier_scan_rows.sort(
+        key=lambda row: (-_safe_int(row.get("injected_delay_days"), 0), -_safe_float(row.get("risk_score"), 0.0), row["node_id"])
+    )
+
+    return JsonResponse(
+        {
+            "status": "success",
+            "summary": summary,
+            "top_nodes": ranked_nodes[
+                [
+                    "node_id",
+                    "supplier_name",
+                    "risk_score",
+                    "injected_delay_days",
+                    "finish_delay_days",
+                    "absorbed_by_buffer_days",
+                    "impacted",
+                    "is_disrupted_node",
+                ]
+            ].to_dict("records"),
+            "supplier_scans": supplier_scan_rows,
+            "explanation": explanation,
+            "report_text": "",
+        }
+    )
 
 
 def get_suppliers_for_part(request, part_id):
@@ -1380,205 +1680,60 @@ def scan_supply_chain(request):
 
 def perform_analysis_view(request):
     pair_key = request.GET.get("pair_key", "").strip()
-    if pair_key:
-        selected_pair = _resolve_physical_pair(pair_key)
-        if not selected_pair:
-            return JsonResponse(
-                {"status": "error", "message": "Invalid node and supplier selection."},
-                status=400,
-            )
-
-        try:
-            scan_details = analyze_supplier_risk_from_news_workflow(
-                selected_pair["supplier_name"],
-                selected_pair["supplier_lat"],
-                selected_pair["supplier_lon"],
-                return_details=True,
-            )
-            risk_score = _safe_float(scan_details.get("risk_score"), 0.0)
-            risk_level = _risk_level_from_score(risk_score)
-        except Exception as exc:
-            return JsonResponse(
-                {
-                    "status": "error",
-                    "message": (
-                        f"Unable to perform analysis for selected pair "
-                        f"{selected_pair['node_name']} / {selected_pair['supplier_name']}: {exc}"
-                    ),
-                },
-                status=500,
-            )
-
+    if not pair_key:
         return JsonResponse(
-            {
-                "status": "success",
-                "node_type": selected_pair["node_type"],
-                "node_name": selected_pair["node_name"],
-                "supplier_name": selected_pair["supplier_name"],
-                "risk_score": risk_score,
-                "risk_level": risk_level,
-                "message": (
-                    f"Risk score calculated for {selected_pair['node_name']} "
-                    f"and {selected_pair['supplier_name']}."
-                ),
-                "supplierInfo": {
-                    "lat": selected_pair["supplier_lat"],
-                    "lon": selected_pair["supplier_lon"],
-                },
-                "scan_details": {
-                    "scanned_location": str(scan_details.get("scanned_location") or "Unknown"),
-                    "articles_count": _safe_int(scan_details.get("articles_count"), 0),
-                    "events_in_window": _safe_int(scan_details.get("events_in_window"), 0),
-                    "events_in_radius": _safe_int(scan_details.get("events_in_radius"), 0),
-                    "radius_miles": _safe_float(scan_details.get("radius_miles"), 50.0),
-                },
-            }
+            {"status": "error", "message": "Missing node and supplier selection."},
+            status=400,
         )
 
-    # Example logic for analysis
-    scenario = request.GET.get('scenario', None)
+    selected_pair = _resolve_physical_pair(pair_key)
+    if not selected_pair:
+        return JsonResponse(
+            {"status": "error", "message": "Invalid node and supplier selection."},
+            status=400,
+        )
 
-    if scenario:
-        scenario_information = { 
-            'case_name': 'Vessel',
-            'part_name': '',
-            'component_name': '',
-            'part_NAIC': '',
-            'part_HS': '',
-            'part_supplier_name': '',
-            'part_supplier_lat': 0,
-            'part_supplier_lon': 0,
-            'part_supplier_NAIC': '',
-            'part_supplier_HS': '',
-            'material_name': '',
-            'material_supplier_name': '',
-            'material_supplier_lat': 0,
-            'material_supplier_lon': 0,
-            'material_supplier_NAIC': '',
-            'material_supplier_HS': ''
-        }
-        ######## Perform some analysis based on the scenario ########
-        ######## Select a production chain      #####################
-        parts = Part.objects.all()
-        if not parts.exists():
-            return JsonResponse({"status": "error", "message": "No parts available."})
-        selected_part = random.choice(parts)
+    try:
+        scan_details = analyze_supplier_risk_from_news_workflow(
+            selected_pair["supplier_name"],
+            selected_pair["supplier_lat"],
+            selected_pair["supplier_lon"],
+            return_details=True,
+        )
+        risk_score = _safe_float(scan_details.get("risk_score"), 0.0)
+        risk_level = _risk_level_from_score(risk_score)
+    except Exception as exc:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": (
+                    f"Unable to perform analysis for selected pair "
+                    f"{selected_pair['node_name']} / {selected_pair['supplier_name']}: {exc}"
+                ),
+            },
+            status=500,
+        )
 
-        # save part information
-        scenario_information['part_name'] = selected_part.part_name
-        scenario_information['component_name'] = selected_part.component.component_name
-        scenario_information['part_NAIC'] = selected_part.NAIC_code
-        scenario_information['part_HS'] = selected_part.HS_code
-
-        
-        # Get related PartSupplier(s)
-        part_suppliers = PartSupplier.objects.filter(part=selected_part)
-        
-        # Check if there are any part suppliers
-        if part_suppliers.exists():
-            # Select a random part supplier
-            random_part_supplier = random.choice(part_suppliers)
-            print("Random Part Supplier:", random_part_supplier)
-            scenario_information['part_supplier_name'] = random_part_supplier.supplier_name
-            scenario_information['part_supplier_lat'] = random_part_supplier.Lat
-            scenario_information['part_supplier_lon'] = random_part_supplier.Lon
-            scenario_information['part_supplier_NAIC'] = random_part_supplier.NAIC_code
-            scenario_information['part_supplier_HS'] = random_part_supplier.HS_code
-
-        else:
-            print("No part suppliers found for the selected part.")
-
-
-        # Get related Material(s)
-        materials = Material.objects.filter(part=selected_part)
-        # Check if there are any materials
-        if materials.exists():
-            # Select a random material
-            random_material = random.choice(materials)
-            print("Random Material:", random_material)  
-            scenario_information['material_name'] = random_material.material_name
-
-            # Get all suppliers related to the random material
-            material_suppliers = MaterialSupplier.objects.filter(material=random_material)
-
-            
-            if material_suppliers.exists():
-                # Select a random material supplier
-                random_material_supplier = random.choice(material_suppliers)
-                print("Random Material Supplier:", random_material_supplier)
-                scenario_information['material_supplier_name'] = random_material_supplier.supplier_name
-                scenario_information['material_supplier_lat'] = random_material_supplier.Lat
-                scenario_information['material_supplier_lon'] = random_material_supplier.Lon
-                scenario_information['material_supplier_NAIC'] = random_material_supplier.NAIC_code
-                scenario_information['material_supplier_HS'] = random_material_supplier.HS_code
-
-            else:
-                print("No material suppliers found for the selected material.")
-                random_material_supplier_data = None
-        else:
-            print("No materials found for the selected part.")
-
-        print("Scenario Information:", scenario_information)
-        
-        #############################################################################
-        # Perform scan from the news around the selected production chain
-        #############################################################################
-        # Force the selection of a specific production chain
-        part_name = 'Shafts/Propellers'
-        partID = 9
-        part_supplier_name = 'Raytheon Technologies'
-        Material_name = 'Aluminum'
-        Material_supplier_name = 'Alcoa'
-        forced_selected_part = Part.objects.filter(part_name=part_name).first()
-        forced_selected_part_supplier = PartSupplier.objects.filter(part=forced_selected_part, supplier_name=part_supplier_name).first()
-        forced_selected_material = Material.objects.filter(part=forced_selected_part, material_name=Material_name).first()
-        forced_selected_material_supplier = MaterialSupplier.objects.filter(material=forced_selected_material, supplier_name=Material_supplier_name).first()
-        print('Forced selected part:', forced_selected_part)
-        print('Forced selected part supplier:', forced_selected_part_supplier)
-        print('Forced selected material:', forced_selected_material)
-        print('Forced selected material supplier:', forced_selected_material_supplier)
-        print('---------------------------')
-
-        #############################################################################
-        #############################################################################
-
-        # Scan part supplier
-        print('Scanning potential disruptions for part.....',forced_selected_part.part_name)
-        r = analyze_supplier_risk_from_news_workflow(forced_selected_part_supplier.supplier_name,forced_selected_part_supplier.Lat, forced_selected_part_supplier.Lon)
-        print('Risk score from news: ', r)
-        
-        forced_selected_scenario_data = {
-            'part_name': forced_selected_part.part_name,
-            'part_supplier_name': forced_selected_part_supplier.supplier_name,
-            'material_name': forced_selected_material.material_name,
-            'material_supplier_name': forced_selected_material_supplier.supplier_name,
-            'part_supplier_lat': forced_selected_part_supplier.Lat,
-            'part_supplier_lon': forced_selected_part_supplier.Lon,
-            'material_supplier_lat': forced_selected_material_supplier.Lat,
-            'material_supplier_lon': forced_selected_material_supplier.Lon
-        }
-
-        # Scan part material supplier location
-        #print('Scanning potential disruptions for.....',scenario_information['part_supplier_name'])
-        #r = analyze_supplier_risk_from_news_workflow(scenario_information['part_supplier_name'],scenario_information['part_supplier_lat'], scenario_information['part_supplier_lon'])
-        #print('Risk score from news scan: ', r)
-        
-        return JsonResponse({
+    return JsonResponse(
+        {
             "status": "success",
-            "scenario": scenario,
-            "part_name": forced_selected_part.part_name,
-            "part_supplier_name": forced_selected_part_supplier.supplier_name,
-            "material_name": forced_selected_material.material_name,
-            "part_supplier_location": "",
-            "risk_score": r,
-            "message": f"Risk score calculated for {scenario}.",
-            "supplierInfo": {
-                "lat": forced_selected_part_supplier.Lat,
-                "long": forced_selected_part_supplier.Lon
-         }
-        })
-    else:
-        return JsonResponse({"status": "error", "message": "No scenario provided."})    
+            "node_type": selected_pair["node_type"],
+            "node_name": selected_pair["node_name"],
+            "supplier_name": selected_pair["supplier_name"],
+            "risk_score": risk_score,
+            "risk_level": risk_level,
+            "scan_details": {
+                "scanned_location": str(scan_details.get("scanned_location") or "Unknown"),
+                "articles_count": _safe_int(scan_details.get("articles_count"), 0),
+                "events_in_window": _safe_int(scan_details.get("events_in_window"), 0),
+                "events_in_radius": _safe_int(scan_details.get("events_in_radius"), 0),
+                "radius_miles": _safe_float(scan_details.get("radius_miles"), 50.0),
+                "gdelt_events": scan_details.get("gdelt_events") or [],
+                "gdelt_events_returned": _safe_int(scan_details.get("gdelt_events_returned"), 0),
+                "gdelt_events_truncated": bool(scan_details.get("gdelt_events_truncated")),
+            },
+        }
+    )
 
 def upload_case_parts_data(request):
     if request.method == 'POST':
@@ -1977,10 +2132,7 @@ def load_project(request):
 def generate_data(request):
     return load_project(request)
     
-
-
-
-    
+   
 
 ########################################################################
 #### Old Dashboard Views ###############################################

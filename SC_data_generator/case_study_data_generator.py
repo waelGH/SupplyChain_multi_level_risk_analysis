@@ -168,9 +168,47 @@ def build_schedule_tree(physical_graph: nx.DiGraph) -> nx.DiGraph:
     return tree
 
 
+def _json_compatible(value):
+    if value is None:
+        return None
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, float) and np.isnan(value):
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def write_schedule_tree_dump(schedule_tree: nx.DiGraph, output_path: Path) -> None:
+    tree_dump = {
+        "node_count": schedule_tree.number_of_nodes(),
+        "edge_count": schedule_tree.number_of_edges(),
+        "nodes": [
+            {
+                "id": str(node_id),
+                "data": {k: _json_compatible(v) for k, v in data.items()},
+            }
+            for node_id, data in schedule_tree.nodes(data=True)
+        ],
+        "edges": [
+            {
+                "src": str(src),
+                "dst": str(dst),
+                "data": {k: _json_compatible(v) for k, v in data.items()},
+            }
+            for src, dst, data in schedule_tree.edges(data=True)
+        ],
+    }
+    with output_path.open("w", encoding="utf-8") as f:
+        json.dump(tree_dump, f, indent=2)
+    print(f"Saved schedule tree dump to {output_path.resolve()}")
+
+
 def build_selected_lead_times(edges_df: pd.DataFrame) -> dict[str, int]:
     selected = edges_df[edges_df["edge_type"] == "supply_selected"][["dst", "lead_time_days"]].copy()
     selected = selected.dropna(subset=["dst", "lead_time_days"])
+    
     # One selected supplier per physical node is expected; keep the first in case of duplicates.
     selected = selected.drop_duplicates(subset=["dst"], keep="first")
     return {
@@ -278,6 +316,8 @@ def generate_baseline_data(
 ) -> tuple[nx.DiGraph, nx.DiGraph, dict[str, dict]]:
     physical_graph = build_physical_graph(nodes_df, edges_df)
     schedule_tree = build_schedule_tree(physical_graph)
+    dump_path = Path(__file__).resolve().parent / "schedule_tree_dump.json"
+    write_schedule_tree_dump(schedule_tree, dump_path)
     selected_lead_times = build_selected_lead_times(edges_df)
     schedule = generate_schedule(schedule_tree, config, selected_lead_times, seed=seed)
     return physical_graph, schedule_tree, schedule

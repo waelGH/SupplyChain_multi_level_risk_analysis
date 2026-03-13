@@ -74,6 +74,13 @@
             background: linear-gradient(135deg, #2b78d6 0%, #1d5da9 100%);
             box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
         }
+        .panel-button.risk-btn {
+            background: linear-gradient(135deg, #2f82e8 0%, #1f67bd 100%);
+        }
+        .panel-button.risk-btn:hover {
+            background: linear-gradient(135deg, #2b78d6 0%, #1d5da9 100%);
+            box-shadow: 0 6px 14px rgba(34, 86, 153, 0.2);
+        }
         .panel-button.opt-btn {
             background: linear-gradient(135deg, #2f82e8 0%, #1f67bd 100%);
         }
@@ -174,6 +181,7 @@
         <button class="panel-button plan-btn" onclick="generateProductionPlan()">View Assigned Suppliers</button>
         <button class="panel-button sim-btn" onclick="runSimulation()">Run Simulation</button>
         <button class="panel-button mc-btn" onclick="runMonteCarloAnalysis()">Monte Carlo Analysis</button>
+        <button class="panel-button risk-btn" onclick="runRiskBasedSimulation()">Scan-based simulation</button>
         <button class="panel-button opt-btn" onclick="runSupplierSelectionOptimization()">Supplier Selection Optimization</button>
     </div>
 
@@ -897,6 +905,140 @@ function runMonteCarloAnalysis() {
             document.getElementById("advancedAnalysisResult").innerHTML = `
                 <h2 class="section-title">Monte Carlo Analysis</h2>
                 <p>Unable to load Monte Carlo results.</p>
+            `;
+        });
+}
+
+function runRiskBasedSimulation() {
+    activeAnalysisView = "risk_based_simulation";
+    showAdvancedAnalysisArea(
+        "Scan-based simulation",
+        "Loading assigned suppliers, scanning supplier risk node by node, and propagating disruptions..."
+    );
+
+    fetch("/mainDash/scan_based_simulation_results/")
+        .then(res => res.json())
+        .then(data => {
+            const advancedBox = document.getElementById("advancedAnalysisResult");
+
+            if (data.status !== "success") {
+                const missingText = (data.missing_files || []).length
+                    ? `<p>Missing files: ${data.missing_files.join(", ")}</p>`
+                    : "";
+                advancedBox.innerHTML = `
+                    <h2 class="section-title">Scan-based simulation</h2>
+                    <p>${data.message || "Scan-based simulation results are not available."}</p>
+                    ${missingText}
+                `;
+                return;
+            }
+
+            const summary = data.summary || {};
+            const explanation = data.explanation || {};
+            const topNodes = data.top_nodes || [];
+            const supplierScans = data.supplier_scans || [];
+
+            const summaryHtml = `
+                <h3 class="section-title" style="font-size:1.03em;margin-top:0;">Scenario Summary</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Suppliers Scanned</th><td>${formatNumber(summary.scanned_suppliers)}</td></tr>
+                        <tr><th>Risk Detection Threshold</th><td>${formatPercent(summary.risk_detection_threshold)}</td></tr>
+                        <tr><th>Risky Suppliers Detected</th><td>${formatNumber(summary.risky_suppliers_detected)}</td></tr>
+                        <tr><th>Nodes With Injected Delay</th><td>${formatNumber(summary.nodes_with_injected_delay)}</td></tr>
+                        <tr><th>Total Injected Delay (days)</th><td>${formatNumber(summary.total_injected_delay_days)}</td></tr>
+                        <tr><th>Root Impacted</th><td>${summary.root_impacted ? "Yes" : "No"}</td></tr>
+                        <tr><th>Root Delay (days)</th><td>${formatNumber(summary.root_delay_days)}</td></tr>
+                        <tr><th>Total Impacted Nodes</th><td>${formatNumber(summary.total_impacted_nodes)}</td></tr>
+                    </tbody>
+                </table>
+            `;
+
+            const impactedRows = topNodes
+                .filter(row => row.impacted === true || Number(row.finish_delay_days || 0) > 0)
+                .map(row => `
+                    <tr>
+                        <td>${row.node_id || ""}</td>
+                        <td>${row.supplier_name || ""}</td>
+                        <td>${formatPercent(row.risk_score)}</td>
+                        <td>${formatNumber(row.injected_delay_days)}</td>
+                        <td>${formatNumber(row.finish_delay_days)}</td>
+                        <td>${formatNumber(row.absorbed_by_buffer_days)}</td>
+                    </tr>
+                `).join("");
+
+            const impactedTableHtml = `
+                <h3 class="section-title" style="font-size:1.03em;">Most Affected Nodes</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node ID</th>
+                            <th>Supplier</th>
+                            <th>Risk Score</th>
+                            <th>Injected Delay</th>
+                            <th>Finish Delay</th>
+                            <th>Absorbed by Buffer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${impactedRows || '<tr><td colspan="6">No impacted nodes in this scenario.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+
+            const scanRows = supplierScans.map(row => `
+                <tr>
+                    <td>${row.node_id || ""}</td>
+                    <td>${row.node_type || ""}</td>
+                    <td>${row.supplier_name || ""}</td>
+                    <td>${row.scanned ? "Yes" : "No"}</td>
+                    <td>${formatPercent(row.risk_score)}</td>
+                    <td>${row.risk_detected ? "Yes" : "No"}</td>
+                    <td>${formatNumber(row.injected_delay_days)}</td>
+                </tr>
+            `).join("");
+
+            const scanTableHtml = `
+                <h3 class="section-title" style="font-size:1.03em;">Supplier Risk Scan (Node-by-Node)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Node ID</th>
+                            <th>Node Type</th>
+                            <th>Assigned Supplier</th>
+                            <th>Scanned</th>
+                            <th>Risk Score</th>
+                            <th>Risk Detected</th>
+                            <th>Injected Delay (days)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${scanRows || '<tr><td colspan="7">No supplier scan rows available.</td></tr>'}
+                    </tbody>
+                </table>
+            `;
+
+            const explanationText = explanation.reached_root
+                ? "Disruptions reached the root node."
+                : "Disruptions were absorbed before reaching the root.";
+            const absorberText = explanation.absorber_node_id
+                ? `Primary absorbing node: ${explanation.absorber_node_id}.`
+                : "No single absorbing node identified.";
+
+            advancedBox.innerHTML = `
+                <h2 class="section-title">Scan-based simulation</h2>
+                ${summaryHtml}
+                ${impactedTableHtml}
+                ${scanTableHtml}
+                <h3 class="section-title" style="font-size:1.03em;">Propagation Explanation</h3>
+                <p>${explanationText} ${absorberText}</p>
+            `;
+        })
+        .catch(error => {
+            console.error("Scan-based simulation fetch error:", error);
+            document.getElementById("advancedAnalysisResult").innerHTML = `
+                <h2 class="section-title">Scan-based simulation</h2>
+                <p>Unable to run scan-based simulation.</p>
             `;
         });
 }

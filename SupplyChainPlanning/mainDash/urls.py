@@ -10,6 +10,7 @@ urlpatterns = [
     path("generate_plan/", views.generate_plan, name='generate_plan'),
     path("simulate_plan/", views.simulate_plan, name='simulate_plan'),
     path("deterministic_results/", views.deterministic_results, name='deterministic_results'),
+    path("scan_based_simulation_results/", views.scan_based_simulation_results, name='scan_based_simulation_results'),
     path("monte_carlo_results/", views.monte_carlo_results, name='monte_carlo_results'),
     path("scan_cyber_layer/", views.scan_cyber_layer, name='scan_cyber_layer'),
     path('get-suppliers/<int:part_id>/', views.get_suppliers_for_part, name='get_suppliers_for_part'),
