@@ -178,6 +178,20 @@ def build_selected_lead_times(edges_df: pd.DataFrame) -> dict[str, int]:
         for _, row in selected.iterrows()
     }
 
+def build_selected_exposures(edges_df: pd.DataFrame) -> dict[str, float]:
+    """Build relative disruption weights from selected supplier edge exposure."""
+
+    selected = edges_df[
+        edges_df["edge_type"] == "supply_selected"
+    ][["dst", "edge_exposure"]].copy()
+
+    selected = selected.dropna(subset=["dst", "edge_exposure"])
+    selected = selected.drop_duplicates(subset=["dst"], keep="first")
+
+    return {
+        str(row["dst"]): float(row["edge_exposure"])
+        for _, row in selected.iterrows()
+    }
 
 def load_generator_inputs(
     nodes_path: Path, edges_path: Path, config_path: Path
@@ -949,18 +963,124 @@ def run_network_disruption_monte_carlo(
         )
     return pd.DataFrame(rows)
 
+def run_network_disruption_monte_carlo_v2(
+    *,
+    tree: nx.DiGraph,
+    config: dict,
+    selected_lead_times: dict[str, int],
+    selected_exposures: dict[str, float],
+    num_runs: int = 500,
+    delay_range: tuple[int, int] = (7, 45),
+    delay_mode_days: int = 14,
+    seed: int = 42,
+) -> pd.DataFrame:
+    """Run Monte Carlo simulations with a newly sampled schedule in every run."""
+
+    if num_runs <= 0:
+        raise ValueError(f"num_runs must be positive, got {num_runs}")
+
+    rng = random.Random(seed)
+
+    root = [n for n, d in tree.in_degree() if d == 0][0]
+    candidate_nodes = sorted(n for n in tree.nodes() if n != root)
+
+    disruption_weights = [
+        selected_exposures[node_id]
+        for node_id in candidate_nodes
+    ]
+
+    if not candidate_nodes:
+        raise ValueError("No non-root nodes available for Monte Carlo disruption sampling")
+
+    rows: list[dict] = []
+
+    for run_id in range(1, num_runs + 1):
+
+        # Sample a new baseline schedule for this Monte Carlo run.
+        schedule_seed = rng.randint(0, 2_147_483_647)
+
+        schedule = generate_schedule(
+            tree,
+            config,
+            selected_lead_times,
+            seed=schedule_seed,
+        )
+
+        # Sample one disruption scenario.
+        disrupted_node_id = rng.choices(
+            candidate_nodes,
+            weights=disruption_weights,
+            k=1,
+        )[0]
+
+        injected_delay_days = int(
+            round(
+                rng.triangular(
+                    int(delay_range[0]),
+                    int(delay_range[1]),
+                    delay_mode_days,
+                )
+            )
+        )
+
+        # Propagate disruption through this sampled schedule.
+        sim_df = simulate_network_disruption(
+            tree=tree,
+            schedule=schedule,
+            disrupted_node_id=disrupted_node_id,
+            delay_days=injected_delay_days,
+        )
+
+        root_row = sim_df[sim_df["layer_id"] == 0].iloc[0]
+
+        root_delay_days = int(root_row["finish_delay_days"])
+        number_of_impacted_nodes = int(sim_df["impacted"].sum())
+
+        rows.append(
+            {
+                "run_id": run_id,
+                "schedule_seed": schedule_seed,
+                "disrupted_node_id": disrupted_node_id,
+                "injected_delay_days": injected_delay_days,
+                "root_delay_days": root_delay_days,
+                "number_of_impacted_nodes": number_of_impacted_nodes,
+                "root_impacted": bool(root_delay_days > 0),
+            }
+        )
+
+    return pd.DataFrame(rows)
 
 def build_mc_summary(mc_results_df: pd.DataFrame) -> pd.DataFrame:
     root_delays = mc_results_df["root_delay_days"]
+    positive_delays = root_delays[root_delays > 0]
+
+    if len(positive_delays) > 0:
+        conditional_mean_delay = float(positive_delays.mean())
+        conditional_median_delay = float(positive_delays.median())
+        conditional_p90_delay = float(positive_delays.quantile(0.90))
+    else:
+        conditional_mean_delay = 0.0
+        conditional_median_delay = 0.0
+        conditional_p90_delay = 0.0
+
     summary = {
         "total_runs": int(len(mc_results_df)),
-        "probability_root_impacted": float(mc_results_df["root_impacted"].mean()),
+        "deadline_miss_count": int((root_delays > 0).sum()),
+        "probability_deadline_miss": float((root_delays > 0).mean()),
         "mean_root_delay": float(root_delays.mean()),
         "median_root_delay": float(root_delays.median()),
         "p90_root_delay": float(root_delays.quantile(0.90)),
+        "p95_root_delay": float(root_delays.quantile(0.95)),
+        "p99_root_delay": float(root_delays.quantile(0.99)),
         "max_root_delay": int(root_delays.max()),
-        "mean_impacted_nodes": float(mc_results_df["number_of_impacted_nodes"].mean()),
+        "mean_impacted_nodes": float(
+            mc_results_df["number_of_impacted_nodes"].mean()
+        ),
+        "mean_delay_given_deadline_miss": conditional_mean_delay,
+        "median_delay_given_deadline_miss": conditional_median_delay,
+        "p90_delay_given_deadline_miss": conditional_p90_delay,
     }
+
     return pd.DataFrame([summary])
 
 
@@ -1075,13 +1195,19 @@ def build_mc_report(
         "",
         "## Overview",
         f"- Runs: `{int(s['total_runs'])}`",
-        f"- Root impacted frequency: `{float(s['probability_root_impacted']):.2%}`",
+        f"- Deadline miss probability: `{float(s['probability_deadline_miss']):.2%}`",
         f"- Mean root delay (days): `{float(s['mean_root_delay']):.2f}`",
         f"- Median root delay (days): `{float(s['median_root_delay']):.2f}`",
         f"- P90 root delay (days): `{float(s['p90_root_delay']):.2f}`",
+        f"- P95 root delay (days): `{float(s['p95_root_delay']):.2f}`",
+        f"- P99 root delay (days): `{float(s['p99_root_delay']):.2f}`",
         f"- Max root delay (days): `{int(s['max_root_delay'])}`",
         f"- Mean impacted nodes: `{float(s['mean_impacted_nodes']):.2f}`",
         "",
+        f"- Deadline miss count: `{int(s['deadline_miss_count'])}`",
+        f"- Mean delay given deadline miss (days): `{float(s['mean_delay_given_deadline_miss']):.2f}`",
+        f"- Median delay given deadline miss (days): `{float(s['median_delay_given_deadline_miss']):.2f}`",
+        f"- P90 delay given deadline miss (days): `{float(s['p90_delay_given_deadline_miss']):.2f}`",
         "## Most Risky Disrupted Nodes",
         "| disrupted_node_id | times_sampled | mean_root_delay | probability_root_impacted | mean_impacted_nodes |",
         "|---|---:|---:|---:|---:|",
@@ -1221,6 +1347,11 @@ def main() -> None:
     mc_node_ranking_csv = Path("vessel_case_study_mc_node_ranking.csv")
     mc_type_summary_csv = Path("vessel_case_study_mc_type_summary.csv")
     mc_report_md = Path("vessel_case_study_mc_report.md")
+    mc_v2_results_csv = Path("vessel_case_study_mc_v2_results.csv")
+    mc_v2_summary_csv = Path("vessel_case_study_mc_v2_summary.csv")
+    mc_v2_node_ranking_csv = Path("vessel_case_study_mc_v2_node_ranking.csv")
+    mc_v2_type_summary_csv = Path("vessel_case_study_mc_v2_type_summary.csv")
+    mc_v2_report_md = Path("vessel_case_study_mc_v2_report.md")
 
     nodes_df, edges_df, config = load_generator_inputs(nodes_path, edges_path, config_path)
     physical_graph, schedule_tree, schedule = generate_baseline_data(nodes_df, edges_df, config, seed=42)
@@ -1273,6 +1404,7 @@ def main() -> None:
     mc_seed = int(mc_cfg.get("seed", 42))
     mc_delay_range_raw = mc_cfg.get("delay_days_range", [7, 45])
     mc_delay_range = (int(mc_delay_range_raw[0]), int(mc_delay_range_raw[1]))
+    mc_delay_mode_days = int(mc_cfg.get("delay_mode_days", 14))
     mc_results_df = run_network_disruption_monte_carlo(
         tree=schedule_tree,
         schedule=schedule,
@@ -1293,6 +1425,42 @@ def main() -> None:
         ranking_path=mc_node_ranking_csv,
         type_summary_path=mc_type_summary_csv,
         report_path=mc_report_md,
+        schedule=schedule,
+    )
+
+    # Monte Carlo V2:
+    # Resample baseline schedule uncertainty for every simulation run.
+    selected_lead_times = build_selected_lead_times(edges_df)
+    selected_exposures = build_selected_exposures(edges_df)
+
+    mc_v2_results_df = run_network_disruption_monte_carlo_v2(
+        tree=schedule_tree,
+        config=config,
+        selected_lead_times=selected_lead_times,
+        selected_exposures=selected_exposures,
+        num_runs=mc_runs,
+        delay_range=mc_delay_range,
+        delay_mode_days=mc_delay_mode_days,
+        seed=mc_seed,
+    )
+
+    mc_v2_summary_df = build_mc_summary(mc_v2_results_df)
+    mc_v2_node_ranking_df = build_mc_node_ranking(mc_v2_results_df)
+    mc_v2_type_summary_df = build_mc_type_summary(
+        mc_v2_node_ranking_df,
+        schedule,
+    )
+
+    write_mc_outputs(
+        mc_results_df=mc_v2_results_df,
+        mc_summary_df=mc_v2_summary_df,
+        mc_node_ranking_df=mc_v2_node_ranking_df,
+        mc_type_summary_df=mc_v2_type_summary_df,
+        results_path=mc_v2_results_csv,
+        summary_path=mc_v2_summary_csv,
+        ranking_path=mc_v2_node_ranking_csv,
+        type_summary_path=mc_v2_type_summary_csv,
+        report_path=mc_v2_report_md,
         schedule=schedule,
     )
 
