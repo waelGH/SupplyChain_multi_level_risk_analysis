@@ -783,41 +783,126 @@ def simulate_plan(request):
 
 
 def monte_carlo_results(request):
-    summary_df = _load_mc_csv("vessel_case_study_mc_summary.csv")
-    ranking_df = _load_mc_csv("vessel_case_study_mc_node_ranking.csv")
-    type_summary_df = _load_mc_csv("vessel_case_study_mc_type_summary.csv")
-    report_text = _load_mc_report_text()
+    """Run Monte Carlo V2 live and return results to the dashboard."""
 
-    missing_files = []
-    if summary_df is None:
-        missing_files.append("vessel_case_study_mc_summary.csv")
-    if ranking_df is None:
-        missing_files.append("vessel_case_study_mc_node_ranking.csv")
+    try:
+        # Load the supply-chain generator module.
+        gen = _load_case_study_generator_module()
 
-    if missing_files:
+        # Locate generator input files.
+        base_dir = _mc_output_dir()
+        nodes_path = base_dir / "__vessel_nodes_realistic_case_study_with_dates.csv"
+        edges_path = base_dir / "__vessel_edges_case_study.csv"
+        config_path = base_dir / "config.json"
+
+        # Load network data and MC configuration.
+        nodes_df, edges_df, config = gen.load_generator_inputs(
+            nodes_path,
+            edges_path,
+            config_path,
+        )
+
+        mc_cfg = config.get("monte_carlo", {})
+
+        mc_runs = int(mc_cfg.get("num_runs", 5000))
+        mc_seed = int(mc_cfg.get("seed", 42))
+
+        delay_range_raw = mc_cfg.get("delay_days_range", [7, 45])
+        delay_range = (
+            int(delay_range_raw[0]),
+            int(delay_range_raw[1]),
+        )
+
+        delay_mode_days = int(
+            mc_cfg.get("delay_mode_days", 14)
+        )
+
+        # Build the fixed network structure.
+        _, schedule_tree, baseline_schedule = gen.generate_baseline_data(
+            nodes_df,
+            edges_df,
+            config,
+            seed=mc_seed,
+        )
+
+        # Supplier information used by MC V2.
+        selected_lead_times = gen.build_selected_lead_times(edges_df)
+        selected_exposures = gen.build_selected_exposures(edges_df)
+
+        # Run Monte Carlo V2 live.
+        mc_results_df = gen.run_network_disruption_monte_carlo_v2(
+            tree=schedule_tree,
+            config=config,
+            selected_lead_times=selected_lead_times,
+            selected_exposures=selected_exposures,
+            num_runs=mc_runs,
+            delay_range=delay_range,
+            delay_mode_days=delay_mode_days,
+            seed=mc_seed,
+        )
+
+        # Build live MC summaries.
+        mc_summary_df = gen.build_mc_summary(mc_results_df)
+        mc_node_ranking_df = gen.build_mc_node_ranking(mc_results_df)
+        mc_type_summary_df = gen.build_mc_type_summary(
+            mc_node_ranking_df,
+            baseline_schedule,
+        )
+
+        # Build report text directly from the live simulation.
+        report_text = gen.build_mc_report(
+            mc_summary_df=mc_summary_df,
+            mc_node_ranking_df=mc_node_ranking_df,
+            mc_type_summary_df=mc_type_summary_df,
+            schedule=baseline_schedule,
+            top_k=5,
+        )
+
+    except FileNotFoundError as exc:
         return JsonResponse(
             {
                 "status": "missing",
-                "message": "Monte Carlo output files not found. Run SC_data_generator first.",
-                "missing_files": missing_files,
+                "message": f"Missing Monte Carlo input file: {exc}",
             }
         )
 
-    summary_row = summary_df.iloc[0].to_dict() if not summary_df.empty else {}
-    top_nodes_df = ranking_df.copy()
-    if "risk_bucket" not in top_nodes_df.columns and "probability_root_impacted" in top_nodes_df.columns:
-        top_nodes_df["risk_bucket"] = top_nodes_df["probability_root_impacted"].apply(
-            _risk_bucket_from_probability
+    except Exception as exc:
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": f"Failed to run Monte Carlo V2: {exc}",
+            }
         )
-    top_nodes_df = top_nodes_df.head(10)
 
-    type_rows = []
-    if type_summary_df is not None:
-        type_rows = type_summary_df.head(10).to_dict("records")
+    summary_row = (
+        mc_summary_df.iloc[0].to_dict()
+        if not mc_summary_df.empty
+        else {}
+    )
+
+    # Temporary backward compatibility with the existing dashboard.
+    # The old dashboard expects probability_root_impacted.
+    # In MC V2 this means probability_deadline_miss.
+    if "probability_deadline_miss" in summary_row:
+        summary_row["probability_root_impacted"] = summary_row[
+            "probability_deadline_miss"
+        ]
+
+    top_nodes_df = mc_node_ranking_df.head(10)
+    type_rows = mc_type_summary_df.head(10).to_dict("records")
 
     return JsonResponse(
         {
             "status": "success",
+            "simulation": {
+                "model": "MC V2",
+                "num_runs": mc_runs,
+                "seed": mc_seed,
+                "delay_distribution": "triangular",
+                "delay_min_days": delay_range[0],
+                "delay_mode_days": delay_mode_days,
+                "delay_max_days": delay_range[1],
+            },
             "summary": summary_row,
             "top_nodes": top_nodes_df.to_dict("records"),
             "type_summary": type_rows,
