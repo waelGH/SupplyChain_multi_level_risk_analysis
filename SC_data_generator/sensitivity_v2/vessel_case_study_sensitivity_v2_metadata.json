@@ -1,0 +1,11 @@
+{
+  "baseline_seed": 42,
+  "root_node_id": "SYS::NextGen_Vessel",
+  "number_of_non_root_nodes": 21,
+  "minimum_disruption_days": 1,
+  "maximum_disruption_days": 45,
+  "number_of_disruption_magnitudes": 45,
+  "total_deterministic_runs": 945,
+  "propagation_function": "simulate_network_disruption",
+  "schedule_resampled_between_runs": false
+}

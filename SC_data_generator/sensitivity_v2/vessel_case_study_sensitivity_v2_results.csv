@@ -1,0 +1,946 @@
+run_id,disrupted_node_id,node_type,layer_id,disruption_days,local_buffer_days,root_delay_days,root_impacted,number_of_impacted_nodes
+1,COMP::Hull & Structural,component,1,1,25,0,False,0
+2,COMP::Hull & Structural,component,1,2,25,0,False,0
+3,COMP::Hull & Structural,component,1,3,25,0,False,0
+4,COMP::Hull & Structural,component,1,4,25,0,False,0
+5,COMP::Hull & Structural,component,1,5,25,0,False,0
+6,COMP::Hull & Structural,component,1,6,25,0,False,0
+7,COMP::Hull & Structural,component,1,7,25,0,False,0
+8,COMP::Hull & Structural,component,1,8,25,0,False,0
+9,COMP::Hull & Structural,component,1,9,25,0,False,0
+10,COMP::Hull & Structural,component,1,10,25,0,False,0
+11,COMP::Hull & Structural,component,1,11,25,0,False,0
+12,COMP::Hull & Structural,component,1,12,25,0,False,0
+13,COMP::Hull & Structural,component,1,13,25,0,False,0
+14,COMP::Hull & Structural,component,1,14,25,0,False,0
+15,COMP::Hull & Structural,component,1,15,25,0,False,0
+16,COMP::Hull & Structural,component,1,16,25,0,False,0
+17,COMP::Hull & Structural,component,1,17,25,0,False,0
+18,COMP::Hull & Structural,component,1,18,25,0,False,0
+19,COMP::Hull & Structural,component,1,19,25,0,False,0
+20,COMP::Hull & Structural,component,1,20,25,0,False,0
+21,COMP::Hull & Structural,component,1,21,25,0,False,0
+22,COMP::Hull & Structural,component,1,22,25,0,False,0
+23,COMP::Hull & Structural,component,1,23,25,0,False,0
+24,COMP::Hull & Structural,component,1,24,25,0,False,0
+25,COMP::Hull & Structural,component,1,25,25,0,False,0
+26,COMP::Hull & Structural,component,1,26,25,1,True,2
+27,COMP::Hull & Structural,component,1,27,25,2,True,2
+28,COMP::Hull & Structural,component,1,28,25,3,True,2
+29,COMP::Hull & Structural,component,1,29,25,4,True,2
+30,COMP::Hull & Structural,component,1,30,25,5,True,2
+31,COMP::Hull & Structural,component,1,31,25,6,True,2
+32,COMP::Hull & Structural,component,1,32,25,7,True,2
+33,COMP::Hull & Structural,component,1,33,25,8,True,2
+34,COMP::Hull & Structural,component,1,34,25,9,True,2
+35,COMP::Hull & Structural,component,1,35,25,10,True,2
+36,COMP::Hull & Structural,component,1,36,25,11,True,2
+37,COMP::Hull & Structural,component,1,37,25,12,True,2
+38,COMP::Hull & Structural,component,1,38,25,13,True,2
+39,COMP::Hull & Structural,component,1,39,25,14,True,2
+40,COMP::Hull & Structural,component,1,40,25,15,True,2
+41,COMP::Hull & Structural,component,1,41,25,16,True,2
+42,COMP::Hull & Structural,component,1,42,25,17,True,2
+43,COMP::Hull & Structural,component,1,43,25,18,True,2
+44,COMP::Hull & Structural,component,1,44,25,19,True,2
+45,COMP::Hull & Structural,component,1,45,25,20,True,2
+46,COMP::Navigation & Sensors,component,1,1,25,0,False,0
+47,COMP::Navigation & Sensors,component,1,2,25,0,False,0
+48,COMP::Navigation & Sensors,component,1,3,25,0,False,0
+49,COMP::Navigation & Sensors,component,1,4,25,0,False,0
+50,COMP::Navigation & Sensors,component,1,5,25,0,False,0
+51,COMP::Navigation & Sensors,component,1,6,25,0,False,0
+52,COMP::Navigation & Sensors,component,1,7,25,0,False,0
+53,COMP::Navigation & Sensors,component,1,8,25,0,False,0
+54,COMP::Navigation & Sensors,component,1,9,25,0,False,0
+55,COMP::Navigation & Sensors,component,1,10,25,0,False,0
+56,COMP::Navigation & Sensors,component,1,11,25,0,False,0
+57,COMP::Navigation & Sensors,component,1,12,25,0,False,0
+58,COMP::Navigation & Sensors,component,1,13,25,0,False,0
+59,COMP::Navigation & Sensors,component,1,14,25,0,False,0
+60,COMP::Navigation & Sensors,component,1,15,25,0,False,0
+61,COMP::Navigation & Sensors,component,1,16,25,0,False,0
+62,COMP::Navigation & Sensors,component,1,17,25,0,False,0
+63,COMP::Navigation & Sensors,component,1,18,25,0,False,0
+64,COMP::Navigation & Sensors,component,1,19,25,0,False,0
+65,COMP::Navigation & Sensors,component,1,20,25,0,False,0
+66,COMP::Navigation & Sensors,component,1,21,25,0,False,0
+67,COMP::Navigation & Sensors,component,1,22,25,0,False,0
+68,COMP::Navigation & Sensors,component,1,23,25,0,False,0
+69,COMP::Navigation & Sensors,component,1,24,25,0,False,0
+70,COMP::Navigation & Sensors,component,1,25,25,0,False,0
+71,COMP::Navigation & Sensors,component,1,26,25,1,True,2
+72,COMP::Navigation & Sensors,component,1,27,25,2,True,2
+73,COMP::Navigation & Sensors,component,1,28,25,3,True,2
+74,COMP::Navigation & Sensors,component,1,29,25,4,True,2
+75,COMP::Navigation & Sensors,component,1,30,25,5,True,2
+76,COMP::Navigation & Sensors,component,1,31,25,6,True,2
+77,COMP::Navigation & Sensors,component,1,32,25,7,True,2
+78,COMP::Navigation & Sensors,component,1,33,25,8,True,2
+79,COMP::Navigation & Sensors,component,1,34,25,9,True,2
+80,COMP::Navigation & Sensors,component,1,35,25,10,True,2
+81,COMP::Navigation & Sensors,component,1,36,25,11,True,2
+82,COMP::Navigation & Sensors,component,1,37,25,12,True,2
+83,COMP::Navigation & Sensors,component,1,38,25,13,True,2
+84,COMP::Navigation & Sensors,component,1,39,25,14,True,2
+85,COMP::Navigation & Sensors,component,1,40,25,15,True,2
+86,COMP::Navigation & Sensors,component,1,41,25,16,True,2
+87,COMP::Navigation & Sensors,component,1,42,25,17,True,2
+88,COMP::Navigation & Sensors,component,1,43,25,18,True,2
+89,COMP::Navigation & Sensors,component,1,44,25,19,True,2
+90,COMP::Navigation & Sensors,component,1,45,25,20,True,2
+91,COMP::Propulsion System,component,1,1,29,0,False,0
+92,COMP::Propulsion System,component,1,2,29,0,False,0
+93,COMP::Propulsion System,component,1,3,29,0,False,0
+94,COMP::Propulsion System,component,1,4,29,0,False,0
+95,COMP::Propulsion System,component,1,5,29,0,False,0
+96,COMP::Propulsion System,component,1,6,29,0,False,0
+97,COMP::Propulsion System,component,1,7,29,0,False,0
+98,COMP::Propulsion System,component,1,8,29,0,False,0
+99,COMP::Propulsion System,component,1,9,29,0,False,0
+100,COMP::Propulsion System,component,1,10,29,0,False,0
+101,COMP::Propulsion System,component,1,11,29,0,False,0
+102,COMP::Propulsion System,component,1,12,29,0,False,0
+103,COMP::Propulsion System,component,1,13,29,0,False,0
+104,COMP::Propulsion System,component,1,14,29,0,False,0
+105,COMP::Propulsion System,component,1,15,29,0,False,0
+106,COMP::Propulsion System,component,1,16,29,0,False,0
+107,COMP::Propulsion System,component,1,17,29,0,False,0
+108,COMP::Propulsion System,component,1,18,29,0,False,0
+109,COMP::Propulsion System,component,1,19,29,0,False,0
+110,COMP::Propulsion System,component,1,20,29,0,False,0
+111,COMP::Propulsion System,component,1,21,29,0,False,0
+112,COMP::Propulsion System,component,1,22,29,0,False,0
+113,COMP::Propulsion System,component,1,23,29,0,False,0
+114,COMP::Propulsion System,component,1,24,29,0,False,0
+115,COMP::Propulsion System,component,1,25,29,0,False,0
+116,COMP::Propulsion System,component,1,26,29,0,False,0
+117,COMP::Propulsion System,component,1,27,29,0,False,0
+118,COMP::Propulsion System,component,1,28,29,0,False,0
+119,COMP::Propulsion System,component,1,29,29,0,False,0
+120,COMP::Propulsion System,component,1,30,29,1,True,2
+121,COMP::Propulsion System,component,1,31,29,2,True,2
+122,COMP::Propulsion System,component,1,32,29,3,True,2
+123,COMP::Propulsion System,component,1,33,29,4,True,2
+124,COMP::Propulsion System,component,1,34,29,5,True,2
+125,COMP::Propulsion System,component,1,35,29,6,True,2
+126,COMP::Propulsion System,component,1,36,29,7,True,2
+127,COMP::Propulsion System,component,1,37,29,8,True,2
+128,COMP::Propulsion System,component,1,38,29,9,True,2
+129,COMP::Propulsion System,component,1,39,29,10,True,2
+130,COMP::Propulsion System,component,1,40,29,11,True,2
+131,COMP::Propulsion System,component,1,41,29,12,True,2
+132,COMP::Propulsion System,component,1,42,29,13,True,2
+133,COMP::Propulsion System,component,1,43,29,14,True,2
+134,COMP::Propulsion System,component,1,44,29,15,True,2
+135,COMP::Propulsion System,component,1,45,29,16,True,2
+136,PART::Ballast Pump,part,2,1,10,0,False,0
+137,PART::Ballast Pump,part,2,2,10,0,False,0
+138,PART::Ballast Pump,part,2,3,10,0,False,0
+139,PART::Ballast Pump,part,2,4,10,0,False,0
+140,PART::Ballast Pump,part,2,5,10,0,False,0
+141,PART::Ballast Pump,part,2,6,10,0,False,0
+142,PART::Ballast Pump,part,2,7,10,0,False,0
+143,PART::Ballast Pump,part,2,8,10,0,False,0
+144,PART::Ballast Pump,part,2,9,10,0,False,0
+145,PART::Ballast Pump,part,2,10,10,0,False,0
+146,PART::Ballast Pump,part,2,11,10,0,False,1
+147,PART::Ballast Pump,part,2,12,10,0,False,1
+148,PART::Ballast Pump,part,2,13,10,0,False,1
+149,PART::Ballast Pump,part,2,14,10,0,False,1
+150,PART::Ballast Pump,part,2,15,10,0,False,1
+151,PART::Ballast Pump,part,2,16,10,0,False,1
+152,PART::Ballast Pump,part,2,17,10,0,False,1
+153,PART::Ballast Pump,part,2,18,10,0,False,1
+154,PART::Ballast Pump,part,2,19,10,0,False,1
+155,PART::Ballast Pump,part,2,20,10,0,False,1
+156,PART::Ballast Pump,part,2,21,10,0,False,1
+157,PART::Ballast Pump,part,2,22,10,0,False,1
+158,PART::Ballast Pump,part,2,23,10,0,False,1
+159,PART::Ballast Pump,part,2,24,10,0,False,1
+160,PART::Ballast Pump,part,2,25,10,0,False,1
+161,PART::Ballast Pump,part,2,26,10,0,False,1
+162,PART::Ballast Pump,part,2,27,10,0,False,1
+163,PART::Ballast Pump,part,2,28,10,0,False,1
+164,PART::Ballast Pump,part,2,29,10,0,False,1
+165,PART::Ballast Pump,part,2,30,10,0,False,1
+166,PART::Ballast Pump,part,2,31,10,0,False,1
+167,PART::Ballast Pump,part,2,32,10,0,False,1
+168,PART::Ballast Pump,part,2,33,10,0,False,1
+169,PART::Ballast Pump,part,2,34,10,0,False,1
+170,PART::Ballast Pump,part,2,35,10,0,False,1
+171,PART::Ballast Pump,part,2,36,10,1,True,3
+172,PART::Ballast Pump,part,2,37,10,2,True,3
+173,PART::Ballast Pump,part,2,38,10,3,True,3
+174,PART::Ballast Pump,part,2,39,10,4,True,3
+175,PART::Ballast Pump,part,2,40,10,5,True,3
+176,PART::Ballast Pump,part,2,41,10,6,True,3
+177,PART::Ballast Pump,part,2,42,10,7,True,3
+178,PART::Ballast Pump,part,2,43,10,8,True,3
+179,PART::Ballast Pump,part,2,44,10,9,True,3
+180,PART::Ballast Pump,part,2,45,10,10,True,3
+181,PART::Gas Turbine Engine,part,2,1,11,0,False,0
+182,PART::Gas Turbine Engine,part,2,2,11,0,False,0
+183,PART::Gas Turbine Engine,part,2,3,11,0,False,0
+184,PART::Gas Turbine Engine,part,2,4,11,0,False,0
+185,PART::Gas Turbine Engine,part,2,5,11,0,False,0
+186,PART::Gas Turbine Engine,part,2,6,11,0,False,0
+187,PART::Gas Turbine Engine,part,2,7,11,0,False,0
+188,PART::Gas Turbine Engine,part,2,8,11,0,False,0
+189,PART::Gas Turbine Engine,part,2,9,11,0,False,0
+190,PART::Gas Turbine Engine,part,2,10,11,0,False,0
+191,PART::Gas Turbine Engine,part,2,11,11,0,False,0
+192,PART::Gas Turbine Engine,part,2,12,11,0,False,1
+193,PART::Gas Turbine Engine,part,2,13,11,0,False,1
+194,PART::Gas Turbine Engine,part,2,14,11,0,False,1
+195,PART::Gas Turbine Engine,part,2,15,11,0,False,1
+196,PART::Gas Turbine Engine,part,2,16,11,0,False,1
+197,PART::Gas Turbine Engine,part,2,17,11,0,False,1
+198,PART::Gas Turbine Engine,part,2,18,11,0,False,1
+199,PART::Gas Turbine Engine,part,2,19,11,0,False,1
+200,PART::Gas Turbine Engine,part,2,20,11,0,False,1
+201,PART::Gas Turbine Engine,part,2,21,11,0,False,1
+202,PART::Gas Turbine Engine,part,2,22,11,0,False,1
+203,PART::Gas Turbine Engine,part,2,23,11,0,False,1
+204,PART::Gas Turbine Engine,part,2,24,11,0,False,1
+205,PART::Gas Turbine Engine,part,2,25,11,0,False,1
+206,PART::Gas Turbine Engine,part,2,26,11,0,False,1
+207,PART::Gas Turbine Engine,part,2,27,11,0,False,1
+208,PART::Gas Turbine Engine,part,2,28,11,0,False,1
+209,PART::Gas Turbine Engine,part,2,29,11,0,False,1
+210,PART::Gas Turbine Engine,part,2,30,11,0,False,1
+211,PART::Gas Turbine Engine,part,2,31,11,0,False,1
+212,PART::Gas Turbine Engine,part,2,32,11,0,False,1
+213,PART::Gas Turbine Engine,part,2,33,11,0,False,1
+214,PART::Gas Turbine Engine,part,2,34,11,0,False,1
+215,PART::Gas Turbine Engine,part,2,35,11,0,False,1
+216,PART::Gas Turbine Engine,part,2,36,11,0,False,1
+217,PART::Gas Turbine Engine,part,2,37,11,0,False,1
+218,PART::Gas Turbine Engine,part,2,38,11,0,False,1
+219,PART::Gas Turbine Engine,part,2,39,11,0,False,1
+220,PART::Gas Turbine Engine,part,2,40,11,0,False,1
+221,PART::Gas Turbine Engine,part,2,41,11,1,True,3
+222,PART::Gas Turbine Engine,part,2,42,11,2,True,3
+223,PART::Gas Turbine Engine,part,2,43,11,3,True,3
+224,PART::Gas Turbine Engine,part,2,44,11,4,True,3
+225,PART::Gas Turbine Engine,part,2,45,11,5,True,3
+226,PART::Hull Plate Section,part,2,1,9,0,False,0
+227,PART::Hull Plate Section,part,2,2,9,0,False,0
+228,PART::Hull Plate Section,part,2,3,9,0,False,0
+229,PART::Hull Plate Section,part,2,4,9,0,False,0
+230,PART::Hull Plate Section,part,2,5,9,0,False,0
+231,PART::Hull Plate Section,part,2,6,9,0,False,0
+232,PART::Hull Plate Section,part,2,7,9,0,False,0
+233,PART::Hull Plate Section,part,2,8,9,0,False,0
+234,PART::Hull Plate Section,part,2,9,9,0,False,0
+235,PART::Hull Plate Section,part,2,10,9,0,False,1
+236,PART::Hull Plate Section,part,2,11,9,0,False,1
+237,PART::Hull Plate Section,part,2,12,9,0,False,1
+238,PART::Hull Plate Section,part,2,13,9,0,False,1
+239,PART::Hull Plate Section,part,2,14,9,0,False,1
+240,PART::Hull Plate Section,part,2,15,9,0,False,1
+241,PART::Hull Plate Section,part,2,16,9,0,False,1
+242,PART::Hull Plate Section,part,2,17,9,0,False,1
+243,PART::Hull Plate Section,part,2,18,9,0,False,1
+244,PART::Hull Plate Section,part,2,19,9,0,False,1
+245,PART::Hull Plate Section,part,2,20,9,0,False,1
+246,PART::Hull Plate Section,part,2,21,9,0,False,1
+247,PART::Hull Plate Section,part,2,22,9,0,False,1
+248,PART::Hull Plate Section,part,2,23,9,0,False,1
+249,PART::Hull Plate Section,part,2,24,9,0,False,1
+250,PART::Hull Plate Section,part,2,25,9,0,False,1
+251,PART::Hull Plate Section,part,2,26,9,0,False,1
+252,PART::Hull Plate Section,part,2,27,9,0,False,1
+253,PART::Hull Plate Section,part,2,28,9,0,False,1
+254,PART::Hull Plate Section,part,2,29,9,0,False,1
+255,PART::Hull Plate Section,part,2,30,9,0,False,1
+256,PART::Hull Plate Section,part,2,31,9,0,False,1
+257,PART::Hull Plate Section,part,2,32,9,0,False,1
+258,PART::Hull Plate Section,part,2,33,9,0,False,1
+259,PART::Hull Plate Section,part,2,34,9,0,False,1
+260,PART::Hull Plate Section,part,2,35,9,1,True,3
+261,PART::Hull Plate Section,part,2,36,9,2,True,3
+262,PART::Hull Plate Section,part,2,37,9,3,True,3
+263,PART::Hull Plate Section,part,2,38,9,4,True,3
+264,PART::Hull Plate Section,part,2,39,9,5,True,3
+265,PART::Hull Plate Section,part,2,40,9,6,True,3
+266,PART::Hull Plate Section,part,2,41,9,7,True,3
+267,PART::Hull Plate Section,part,2,42,9,8,True,3
+268,PART::Hull Plate Section,part,2,43,9,9,True,3
+269,PART::Hull Plate Section,part,2,44,9,10,True,3
+270,PART::Hull Plate Section,part,2,45,9,11,True,3
+271,PART::Inertial Navigation Unit,part,2,1,10,0,False,0
+272,PART::Inertial Navigation Unit,part,2,2,10,0,False,0
+273,PART::Inertial Navigation Unit,part,2,3,10,0,False,0
+274,PART::Inertial Navigation Unit,part,2,4,10,0,False,0
+275,PART::Inertial Navigation Unit,part,2,5,10,0,False,0
+276,PART::Inertial Navigation Unit,part,2,6,10,0,False,0
+277,PART::Inertial Navigation Unit,part,2,7,10,0,False,0
+278,PART::Inertial Navigation Unit,part,2,8,10,0,False,0
+279,PART::Inertial Navigation Unit,part,2,9,10,0,False,0
+280,PART::Inertial Navigation Unit,part,2,10,10,0,False,0
+281,PART::Inertial Navigation Unit,part,2,11,10,0,False,1
+282,PART::Inertial Navigation Unit,part,2,12,10,0,False,1
+283,PART::Inertial Navigation Unit,part,2,13,10,0,False,1
+284,PART::Inertial Navigation Unit,part,2,14,10,0,False,1
+285,PART::Inertial Navigation Unit,part,2,15,10,0,False,1
+286,PART::Inertial Navigation Unit,part,2,16,10,0,False,1
+287,PART::Inertial Navigation Unit,part,2,17,10,0,False,1
+288,PART::Inertial Navigation Unit,part,2,18,10,0,False,1
+289,PART::Inertial Navigation Unit,part,2,19,10,0,False,1
+290,PART::Inertial Navigation Unit,part,2,20,10,0,False,1
+291,PART::Inertial Navigation Unit,part,2,21,10,0,False,1
+292,PART::Inertial Navigation Unit,part,2,22,10,0,False,1
+293,PART::Inertial Navigation Unit,part,2,23,10,0,False,1
+294,PART::Inertial Navigation Unit,part,2,24,10,0,False,1
+295,PART::Inertial Navigation Unit,part,2,25,10,0,False,1
+296,PART::Inertial Navigation Unit,part,2,26,10,0,False,1
+297,PART::Inertial Navigation Unit,part,2,27,10,0,False,1
+298,PART::Inertial Navigation Unit,part,2,28,10,0,False,1
+299,PART::Inertial Navigation Unit,part,2,29,10,0,False,1
+300,PART::Inertial Navigation Unit,part,2,30,10,0,False,1
+301,PART::Inertial Navigation Unit,part,2,31,10,0,False,1
+302,PART::Inertial Navigation Unit,part,2,32,10,0,False,1
+303,PART::Inertial Navigation Unit,part,2,33,10,0,False,1
+304,PART::Inertial Navigation Unit,part,2,34,10,0,False,1
+305,PART::Inertial Navigation Unit,part,2,35,10,0,False,1
+306,PART::Inertial Navigation Unit,part,2,36,10,1,True,3
+307,PART::Inertial Navigation Unit,part,2,37,10,2,True,3
+308,PART::Inertial Navigation Unit,part,2,38,10,3,True,3
+309,PART::Inertial Navigation Unit,part,2,39,10,4,True,3
+310,PART::Inertial Navigation Unit,part,2,40,10,5,True,3
+311,PART::Inertial Navigation Unit,part,2,41,10,6,True,3
+312,PART::Inertial Navigation Unit,part,2,42,10,7,True,3
+313,PART::Inertial Navigation Unit,part,2,43,10,8,True,3
+314,PART::Inertial Navigation Unit,part,2,44,10,9,True,3
+315,PART::Inertial Navigation Unit,part,2,45,10,10,True,3
+316,PART::Radar Antenna,part,2,1,4,0,False,0
+317,PART::Radar Antenna,part,2,2,4,0,False,0
+318,PART::Radar Antenna,part,2,3,4,0,False,0
+319,PART::Radar Antenna,part,2,4,4,0,False,0
+320,PART::Radar Antenna,part,2,5,4,0,False,1
+321,PART::Radar Antenna,part,2,6,4,0,False,1
+322,PART::Radar Antenna,part,2,7,4,0,False,1
+323,PART::Radar Antenna,part,2,8,4,0,False,1
+324,PART::Radar Antenna,part,2,9,4,0,False,1
+325,PART::Radar Antenna,part,2,10,4,0,False,1
+326,PART::Radar Antenna,part,2,11,4,0,False,1
+327,PART::Radar Antenna,part,2,12,4,0,False,1
+328,PART::Radar Antenna,part,2,13,4,0,False,1
+329,PART::Radar Antenna,part,2,14,4,0,False,1
+330,PART::Radar Antenna,part,2,15,4,0,False,1
+331,PART::Radar Antenna,part,2,16,4,0,False,1
+332,PART::Radar Antenna,part,2,17,4,0,False,1
+333,PART::Radar Antenna,part,2,18,4,0,False,1
+334,PART::Radar Antenna,part,2,19,4,0,False,1
+335,PART::Radar Antenna,part,2,20,4,0,False,1
+336,PART::Radar Antenna,part,2,21,4,0,False,1
+337,PART::Radar Antenna,part,2,22,4,0,False,1
+338,PART::Radar Antenna,part,2,23,4,0,False,1
+339,PART::Radar Antenna,part,2,24,4,0,False,1
+340,PART::Radar Antenna,part,2,25,4,0,False,1
+341,PART::Radar Antenna,part,2,26,4,0,False,1
+342,PART::Radar Antenna,part,2,27,4,0,False,1
+343,PART::Radar Antenna,part,2,28,4,0,False,1
+344,PART::Radar Antenna,part,2,29,4,0,False,1
+345,PART::Radar Antenna,part,2,30,4,1,True,3
+346,PART::Radar Antenna,part,2,31,4,2,True,3
+347,PART::Radar Antenna,part,2,32,4,3,True,3
+348,PART::Radar Antenna,part,2,33,4,4,True,3
+349,PART::Radar Antenna,part,2,34,4,5,True,3
+350,PART::Radar Antenna,part,2,35,4,6,True,3
+351,PART::Radar Antenna,part,2,36,4,7,True,3
+352,PART::Radar Antenna,part,2,37,4,8,True,3
+353,PART::Radar Antenna,part,2,38,4,9,True,3
+354,PART::Radar Antenna,part,2,39,4,10,True,3
+355,PART::Radar Antenna,part,2,40,4,11,True,3
+356,PART::Radar Antenna,part,2,41,4,12,True,3
+357,PART::Radar Antenna,part,2,42,4,13,True,3
+358,PART::Radar Antenna,part,2,43,4,14,True,3
+359,PART::Radar Antenna,part,2,44,4,15,True,3
+360,PART::Radar Antenna,part,2,45,4,16,True,3
+361,PART::Reduction Gearbox,part,2,1,10,0,False,0
+362,PART::Reduction Gearbox,part,2,2,10,0,False,0
+363,PART::Reduction Gearbox,part,2,3,10,0,False,0
+364,PART::Reduction Gearbox,part,2,4,10,0,False,0
+365,PART::Reduction Gearbox,part,2,5,10,0,False,0
+366,PART::Reduction Gearbox,part,2,6,10,0,False,0
+367,PART::Reduction Gearbox,part,2,7,10,0,False,0
+368,PART::Reduction Gearbox,part,2,8,10,0,False,0
+369,PART::Reduction Gearbox,part,2,9,10,0,False,0
+370,PART::Reduction Gearbox,part,2,10,10,0,False,0
+371,PART::Reduction Gearbox,part,2,11,10,0,False,1
+372,PART::Reduction Gearbox,part,2,12,10,0,False,1
+373,PART::Reduction Gearbox,part,2,13,10,0,False,1
+374,PART::Reduction Gearbox,part,2,14,10,0,False,1
+375,PART::Reduction Gearbox,part,2,15,10,0,False,1
+376,PART::Reduction Gearbox,part,2,16,10,0,False,1
+377,PART::Reduction Gearbox,part,2,17,10,0,False,1
+378,PART::Reduction Gearbox,part,2,18,10,0,False,1
+379,PART::Reduction Gearbox,part,2,19,10,0,False,1
+380,PART::Reduction Gearbox,part,2,20,10,0,False,1
+381,PART::Reduction Gearbox,part,2,21,10,0,False,1
+382,PART::Reduction Gearbox,part,2,22,10,0,False,1
+383,PART::Reduction Gearbox,part,2,23,10,0,False,1
+384,PART::Reduction Gearbox,part,2,24,10,0,False,1
+385,PART::Reduction Gearbox,part,2,25,10,0,False,1
+386,PART::Reduction Gearbox,part,2,26,10,0,False,1
+387,PART::Reduction Gearbox,part,2,27,10,0,False,1
+388,PART::Reduction Gearbox,part,2,28,10,0,False,1
+389,PART::Reduction Gearbox,part,2,29,10,0,False,1
+390,PART::Reduction Gearbox,part,2,30,10,0,False,1
+391,PART::Reduction Gearbox,part,2,31,10,0,False,1
+392,PART::Reduction Gearbox,part,2,32,10,0,False,1
+393,PART::Reduction Gearbox,part,2,33,10,0,False,1
+394,PART::Reduction Gearbox,part,2,34,10,0,False,1
+395,PART::Reduction Gearbox,part,2,35,10,0,False,1
+396,PART::Reduction Gearbox,part,2,36,10,0,False,1
+397,PART::Reduction Gearbox,part,2,37,10,0,False,1
+398,PART::Reduction Gearbox,part,2,38,10,0,False,1
+399,PART::Reduction Gearbox,part,2,39,10,0,False,1
+400,PART::Reduction Gearbox,part,2,40,10,1,True,3
+401,PART::Reduction Gearbox,part,2,41,10,2,True,3
+402,PART::Reduction Gearbox,part,2,42,10,3,True,3
+403,PART::Reduction Gearbox,part,2,43,10,4,True,3
+404,PART::Reduction Gearbox,part,2,44,10,5,True,3
+405,PART::Reduction Gearbox,part,2,45,10,6,True,3
+406,RAW::Alloy Steel Gear Blank,raw_material,3,1,5,0,False,0
+407,RAW::Alloy Steel Gear Blank,raw_material,3,2,5,0,False,0
+408,RAW::Alloy Steel Gear Blank,raw_material,3,3,5,0,False,0
+409,RAW::Alloy Steel Gear Blank,raw_material,3,4,5,0,False,0
+410,RAW::Alloy Steel Gear Blank,raw_material,3,5,5,0,False,0
+411,RAW::Alloy Steel Gear Blank,raw_material,3,6,5,0,False,1
+412,RAW::Alloy Steel Gear Blank,raw_material,3,7,5,0,False,1
+413,RAW::Alloy Steel Gear Blank,raw_material,3,8,5,0,False,1
+414,RAW::Alloy Steel Gear Blank,raw_material,3,9,5,0,False,1
+415,RAW::Alloy Steel Gear Blank,raw_material,3,10,5,0,False,1
+416,RAW::Alloy Steel Gear Blank,raw_material,3,11,5,0,False,1
+417,RAW::Alloy Steel Gear Blank,raw_material,3,12,5,0,False,1
+418,RAW::Alloy Steel Gear Blank,raw_material,3,13,5,0,False,1
+419,RAW::Alloy Steel Gear Blank,raw_material,3,14,5,0,False,1
+420,RAW::Alloy Steel Gear Blank,raw_material,3,15,5,0,False,1
+421,RAW::Alloy Steel Gear Blank,raw_material,3,16,5,0,False,2
+422,RAW::Alloy Steel Gear Blank,raw_material,3,17,5,0,False,2
+423,RAW::Alloy Steel Gear Blank,raw_material,3,18,5,0,False,2
+424,RAW::Alloy Steel Gear Blank,raw_material,3,19,5,0,False,2
+425,RAW::Alloy Steel Gear Blank,raw_material,3,20,5,0,False,2
+426,RAW::Alloy Steel Gear Blank,raw_material,3,21,5,0,False,2
+427,RAW::Alloy Steel Gear Blank,raw_material,3,22,5,0,False,2
+428,RAW::Alloy Steel Gear Blank,raw_material,3,23,5,0,False,2
+429,RAW::Alloy Steel Gear Blank,raw_material,3,24,5,0,False,2
+430,RAW::Alloy Steel Gear Blank,raw_material,3,25,5,0,False,2
+431,RAW::Alloy Steel Gear Blank,raw_material,3,26,5,0,False,2
+432,RAW::Alloy Steel Gear Blank,raw_material,3,27,5,0,False,2
+433,RAW::Alloy Steel Gear Blank,raw_material,3,28,5,0,False,2
+434,RAW::Alloy Steel Gear Blank,raw_material,3,29,5,0,False,2
+435,RAW::Alloy Steel Gear Blank,raw_material,3,30,5,0,False,2
+436,RAW::Alloy Steel Gear Blank,raw_material,3,31,5,0,False,2
+437,RAW::Alloy Steel Gear Blank,raw_material,3,32,5,0,False,2
+438,RAW::Alloy Steel Gear Blank,raw_material,3,33,5,0,False,2
+439,RAW::Alloy Steel Gear Blank,raw_material,3,34,5,0,False,2
+440,RAW::Alloy Steel Gear Blank,raw_material,3,35,5,0,False,2
+441,RAW::Alloy Steel Gear Blank,raw_material,3,36,5,0,False,2
+442,RAW::Alloy Steel Gear Blank,raw_material,3,37,5,0,False,2
+443,RAW::Alloy Steel Gear Blank,raw_material,3,38,5,0,False,2
+444,RAW::Alloy Steel Gear Blank,raw_material,3,39,5,0,False,2
+445,RAW::Alloy Steel Gear Blank,raw_material,3,40,5,0,False,2
+446,RAW::Alloy Steel Gear Blank,raw_material,3,41,5,0,False,2
+447,RAW::Alloy Steel Gear Blank,raw_material,3,42,5,0,False,2
+448,RAW::Alloy Steel Gear Blank,raw_material,3,43,5,0,False,2
+449,RAW::Alloy Steel Gear Blank,raw_material,3,44,5,0,False,2
+450,RAW::Alloy Steel Gear Blank,raw_material,3,45,5,1,True,4
+451,RAW::Composite Epoxy Prepreg,raw_material,3,1,5,0,False,0
+452,RAW::Composite Epoxy Prepreg,raw_material,3,2,5,0,False,0
+453,RAW::Composite Epoxy Prepreg,raw_material,3,3,5,0,False,0
+454,RAW::Composite Epoxy Prepreg,raw_material,3,4,5,0,False,0
+455,RAW::Composite Epoxy Prepreg,raw_material,3,5,5,0,False,0
+456,RAW::Composite Epoxy Prepreg,raw_material,3,6,5,0,False,1
+457,RAW::Composite Epoxy Prepreg,raw_material,3,7,5,0,False,1
+458,RAW::Composite Epoxy Prepreg,raw_material,3,8,5,0,False,1
+459,RAW::Composite Epoxy Prepreg,raw_material,3,9,5,0,False,1
+460,RAW::Composite Epoxy Prepreg,raw_material,3,10,5,0,False,2
+461,RAW::Composite Epoxy Prepreg,raw_material,3,11,5,0,False,2
+462,RAW::Composite Epoxy Prepreg,raw_material,3,12,5,0,False,2
+463,RAW::Composite Epoxy Prepreg,raw_material,3,13,5,0,False,2
+464,RAW::Composite Epoxy Prepreg,raw_material,3,14,5,0,False,2
+465,RAW::Composite Epoxy Prepreg,raw_material,3,15,5,0,False,2
+466,RAW::Composite Epoxy Prepreg,raw_material,3,16,5,0,False,2
+467,RAW::Composite Epoxy Prepreg,raw_material,3,17,5,0,False,2
+468,RAW::Composite Epoxy Prepreg,raw_material,3,18,5,0,False,2
+469,RAW::Composite Epoxy Prepreg,raw_material,3,19,5,0,False,2
+470,RAW::Composite Epoxy Prepreg,raw_material,3,20,5,0,False,2
+471,RAW::Composite Epoxy Prepreg,raw_material,3,21,5,0,False,2
+472,RAW::Composite Epoxy Prepreg,raw_material,3,22,5,0,False,2
+473,RAW::Composite Epoxy Prepreg,raw_material,3,23,5,0,False,2
+474,RAW::Composite Epoxy Prepreg,raw_material,3,24,5,0,False,2
+475,RAW::Composite Epoxy Prepreg,raw_material,3,25,5,0,False,2
+476,RAW::Composite Epoxy Prepreg,raw_material,3,26,5,0,False,2
+477,RAW::Composite Epoxy Prepreg,raw_material,3,27,5,0,False,2
+478,RAW::Composite Epoxy Prepreg,raw_material,3,28,5,0,False,2
+479,RAW::Composite Epoxy Prepreg,raw_material,3,29,5,0,False,2
+480,RAW::Composite Epoxy Prepreg,raw_material,3,30,5,0,False,2
+481,RAW::Composite Epoxy Prepreg,raw_material,3,31,5,0,False,2
+482,RAW::Composite Epoxy Prepreg,raw_material,3,32,5,0,False,2
+483,RAW::Composite Epoxy Prepreg,raw_material,3,33,5,0,False,2
+484,RAW::Composite Epoxy Prepreg,raw_material,3,34,5,0,False,2
+485,RAW::Composite Epoxy Prepreg,raw_material,3,35,5,1,True,4
+486,RAW::Composite Epoxy Prepreg,raw_material,3,36,5,2,True,4
+487,RAW::Composite Epoxy Prepreg,raw_material,3,37,5,3,True,4
+488,RAW::Composite Epoxy Prepreg,raw_material,3,38,5,4,True,4
+489,RAW::Composite Epoxy Prepreg,raw_material,3,39,5,5,True,4
+490,RAW::Composite Epoxy Prepreg,raw_material,3,40,5,6,True,4
+491,RAW::Composite Epoxy Prepreg,raw_material,3,41,5,7,True,4
+492,RAW::Composite Epoxy Prepreg,raw_material,3,42,5,8,True,4
+493,RAW::Composite Epoxy Prepreg,raw_material,3,43,5,9,True,4
+494,RAW::Composite Epoxy Prepreg,raw_material,3,44,5,10,True,4
+495,RAW::Composite Epoxy Prepreg,raw_material,3,45,5,11,True,4
+496,RAW::Elastomer Seals (Nitrile),raw_material,3,1,3,0,False,0
+497,RAW::Elastomer Seals (Nitrile),raw_material,3,2,3,0,False,0
+498,RAW::Elastomer Seals (Nitrile),raw_material,3,3,3,0,False,0
+499,RAW::Elastomer Seals (Nitrile),raw_material,3,4,3,0,False,1
+500,RAW::Elastomer Seals (Nitrile),raw_material,3,5,3,0,False,1
+501,RAW::Elastomer Seals (Nitrile),raw_material,3,6,3,0,False,1
+502,RAW::Elastomer Seals (Nitrile),raw_material,3,7,3,0,False,1
+503,RAW::Elastomer Seals (Nitrile),raw_material,3,8,3,0,False,1
+504,RAW::Elastomer Seals (Nitrile),raw_material,3,9,3,0,False,1
+505,RAW::Elastomer Seals (Nitrile),raw_material,3,10,3,0,False,1
+506,RAW::Elastomer Seals (Nitrile),raw_material,3,11,3,0,False,1
+507,RAW::Elastomer Seals (Nitrile),raw_material,3,12,3,0,False,1
+508,RAW::Elastomer Seals (Nitrile),raw_material,3,13,3,0,False,1
+509,RAW::Elastomer Seals (Nitrile),raw_material,3,14,3,0,False,2
+510,RAW::Elastomer Seals (Nitrile),raw_material,3,15,3,0,False,2
+511,RAW::Elastomer Seals (Nitrile),raw_material,3,16,3,0,False,2
+512,RAW::Elastomer Seals (Nitrile),raw_material,3,17,3,0,False,2
+513,RAW::Elastomer Seals (Nitrile),raw_material,3,18,3,0,False,2
+514,RAW::Elastomer Seals (Nitrile),raw_material,3,19,3,0,False,2
+515,RAW::Elastomer Seals (Nitrile),raw_material,3,20,3,0,False,2
+516,RAW::Elastomer Seals (Nitrile),raw_material,3,21,3,0,False,2
+517,RAW::Elastomer Seals (Nitrile),raw_material,3,22,3,0,False,2
+518,RAW::Elastomer Seals (Nitrile),raw_material,3,23,3,0,False,2
+519,RAW::Elastomer Seals (Nitrile),raw_material,3,24,3,0,False,2
+520,RAW::Elastomer Seals (Nitrile),raw_material,3,25,3,0,False,2
+521,RAW::Elastomer Seals (Nitrile),raw_material,3,26,3,0,False,2
+522,RAW::Elastomer Seals (Nitrile),raw_material,3,27,3,0,False,2
+523,RAW::Elastomer Seals (Nitrile),raw_material,3,28,3,0,False,2
+524,RAW::Elastomer Seals (Nitrile),raw_material,3,29,3,0,False,2
+525,RAW::Elastomer Seals (Nitrile),raw_material,3,30,3,0,False,2
+526,RAW::Elastomer Seals (Nitrile),raw_material,3,31,3,0,False,2
+527,RAW::Elastomer Seals (Nitrile),raw_material,3,32,3,0,False,2
+528,RAW::Elastomer Seals (Nitrile),raw_material,3,33,3,0,False,2
+529,RAW::Elastomer Seals (Nitrile),raw_material,3,34,3,0,False,2
+530,RAW::Elastomer Seals (Nitrile),raw_material,3,35,3,0,False,2
+531,RAW::Elastomer Seals (Nitrile),raw_material,3,36,3,0,False,2
+532,RAW::Elastomer Seals (Nitrile),raw_material,3,37,3,0,False,2
+533,RAW::Elastomer Seals (Nitrile),raw_material,3,38,3,0,False,2
+534,RAW::Elastomer Seals (Nitrile),raw_material,3,39,3,1,True,4
+535,RAW::Elastomer Seals (Nitrile),raw_material,3,40,3,2,True,4
+536,RAW::Elastomer Seals (Nitrile),raw_material,3,41,3,3,True,4
+537,RAW::Elastomer Seals (Nitrile),raw_material,3,42,3,4,True,4
+538,RAW::Elastomer Seals (Nitrile),raw_material,3,43,3,5,True,4
+539,RAW::Elastomer Seals (Nitrile),raw_material,3,44,3,6,True,4
+540,RAW::Elastomer Seals (Nitrile),raw_material,3,45,3,7,True,4
+541,RAW::High-Strength Bearing Steel,raw_material,3,1,8,0,False,0
+542,RAW::High-Strength Bearing Steel,raw_material,3,2,8,0,False,0
+543,RAW::High-Strength Bearing Steel,raw_material,3,3,8,0,False,0
+544,RAW::High-Strength Bearing Steel,raw_material,3,4,8,0,False,0
+545,RAW::High-Strength Bearing Steel,raw_material,3,5,8,0,False,0
+546,RAW::High-Strength Bearing Steel,raw_material,3,6,8,0,False,0
+547,RAW::High-Strength Bearing Steel,raw_material,3,7,8,0,False,0
+548,RAW::High-Strength Bearing Steel,raw_material,3,8,8,0,False,0
+549,RAW::High-Strength Bearing Steel,raw_material,3,9,8,0,False,1
+550,RAW::High-Strength Bearing Steel,raw_material,3,10,8,0,False,1
+551,RAW::High-Strength Bearing Steel,raw_material,3,11,8,0,False,1
+552,RAW::High-Strength Bearing Steel,raw_material,3,12,8,0,False,1
+553,RAW::High-Strength Bearing Steel,raw_material,3,13,8,0,False,1
+554,RAW::High-Strength Bearing Steel,raw_material,3,14,8,0,False,1
+555,RAW::High-Strength Bearing Steel,raw_material,3,15,8,0,False,1
+556,RAW::High-Strength Bearing Steel,raw_material,3,16,8,0,False,1
+557,RAW::High-Strength Bearing Steel,raw_material,3,17,8,0,False,1
+558,RAW::High-Strength Bearing Steel,raw_material,3,18,8,0,False,1
+559,RAW::High-Strength Bearing Steel,raw_material,3,19,8,0,False,2
+560,RAW::High-Strength Bearing Steel,raw_material,3,20,8,0,False,2
+561,RAW::High-Strength Bearing Steel,raw_material,3,21,8,0,False,2
+562,RAW::High-Strength Bearing Steel,raw_material,3,22,8,0,False,2
+563,RAW::High-Strength Bearing Steel,raw_material,3,23,8,0,False,2
+564,RAW::High-Strength Bearing Steel,raw_material,3,24,8,0,False,2
+565,RAW::High-Strength Bearing Steel,raw_material,3,25,8,0,False,2
+566,RAW::High-Strength Bearing Steel,raw_material,3,26,8,0,False,2
+567,RAW::High-Strength Bearing Steel,raw_material,3,27,8,0,False,2
+568,RAW::High-Strength Bearing Steel,raw_material,3,28,8,0,False,2
+569,RAW::High-Strength Bearing Steel,raw_material,3,29,8,0,False,2
+570,RAW::High-Strength Bearing Steel,raw_material,3,30,8,0,False,2
+571,RAW::High-Strength Bearing Steel,raw_material,3,31,8,0,False,2
+572,RAW::High-Strength Bearing Steel,raw_material,3,32,8,0,False,2
+573,RAW::High-Strength Bearing Steel,raw_material,3,33,8,0,False,2
+574,RAW::High-Strength Bearing Steel,raw_material,3,34,8,0,False,2
+575,RAW::High-Strength Bearing Steel,raw_material,3,35,8,0,False,2
+576,RAW::High-Strength Bearing Steel,raw_material,3,36,8,0,False,2
+577,RAW::High-Strength Bearing Steel,raw_material,3,37,8,0,False,2
+578,RAW::High-Strength Bearing Steel,raw_material,3,38,8,0,False,2
+579,RAW::High-Strength Bearing Steel,raw_material,3,39,8,0,False,2
+580,RAW::High-Strength Bearing Steel,raw_material,3,40,8,0,False,2
+581,RAW::High-Strength Bearing Steel,raw_material,3,41,8,0,False,2
+582,RAW::High-Strength Bearing Steel,raw_material,3,42,8,0,False,2
+583,RAW::High-Strength Bearing Steel,raw_material,3,43,8,0,False,2
+584,RAW::High-Strength Bearing Steel,raw_material,3,44,8,0,False,2
+585,RAW::High-Strength Bearing Steel,raw_material,3,45,8,0,False,2
+586,RAW::Marine-grade Steel (AH36),raw_material,3,1,10,0,False,0
+587,RAW::Marine-grade Steel (AH36),raw_material,3,2,10,0,False,0
+588,RAW::Marine-grade Steel (AH36),raw_material,3,3,10,0,False,0
+589,RAW::Marine-grade Steel (AH36),raw_material,3,4,10,0,False,0
+590,RAW::Marine-grade Steel (AH36),raw_material,3,5,10,0,False,0
+591,RAW::Marine-grade Steel (AH36),raw_material,3,6,10,0,False,0
+592,RAW::Marine-grade Steel (AH36),raw_material,3,7,10,0,False,0
+593,RAW::Marine-grade Steel (AH36),raw_material,3,8,10,0,False,0
+594,RAW::Marine-grade Steel (AH36),raw_material,3,9,10,0,False,0
+595,RAW::Marine-grade Steel (AH36),raw_material,3,10,10,0,False,0
+596,RAW::Marine-grade Steel (AH36),raw_material,3,11,10,0,False,1
+597,RAW::Marine-grade Steel (AH36),raw_material,3,12,10,0,False,1
+598,RAW::Marine-grade Steel (AH36),raw_material,3,13,10,0,False,1
+599,RAW::Marine-grade Steel (AH36),raw_material,3,14,10,0,False,1
+600,RAW::Marine-grade Steel (AH36),raw_material,3,15,10,0,False,1
+601,RAW::Marine-grade Steel (AH36),raw_material,3,16,10,0,False,1
+602,RAW::Marine-grade Steel (AH36),raw_material,3,17,10,0,False,1
+603,RAW::Marine-grade Steel (AH36),raw_material,3,18,10,0,False,1
+604,RAW::Marine-grade Steel (AH36),raw_material,3,19,10,0,False,1
+605,RAW::Marine-grade Steel (AH36),raw_material,3,20,10,0,False,2
+606,RAW::Marine-grade Steel (AH36),raw_material,3,21,10,0,False,2
+607,RAW::Marine-grade Steel (AH36),raw_material,3,22,10,0,False,2
+608,RAW::Marine-grade Steel (AH36),raw_material,3,23,10,0,False,2
+609,RAW::Marine-grade Steel (AH36),raw_material,3,24,10,0,False,2
+610,RAW::Marine-grade Steel (AH36),raw_material,3,25,10,0,False,2
+611,RAW::Marine-grade Steel (AH36),raw_material,3,26,10,0,False,2
+612,RAW::Marine-grade Steel (AH36),raw_material,3,27,10,0,False,2
+613,RAW::Marine-grade Steel (AH36),raw_material,3,28,10,0,False,2
+614,RAW::Marine-grade Steel (AH36),raw_material,3,29,10,0,False,2
+615,RAW::Marine-grade Steel (AH36),raw_material,3,30,10,0,False,2
+616,RAW::Marine-grade Steel (AH36),raw_material,3,31,10,0,False,2
+617,RAW::Marine-grade Steel (AH36),raw_material,3,32,10,0,False,2
+618,RAW::Marine-grade Steel (AH36),raw_material,3,33,10,0,False,2
+619,RAW::Marine-grade Steel (AH36),raw_material,3,34,10,0,False,2
+620,RAW::Marine-grade Steel (AH36),raw_material,3,35,10,0,False,2
+621,RAW::Marine-grade Steel (AH36),raw_material,3,36,10,0,False,2
+622,RAW::Marine-grade Steel (AH36),raw_material,3,37,10,0,False,2
+623,RAW::Marine-grade Steel (AH36),raw_material,3,38,10,0,False,2
+624,RAW::Marine-grade Steel (AH36),raw_material,3,39,10,0,False,2
+625,RAW::Marine-grade Steel (AH36),raw_material,3,40,10,0,False,2
+626,RAW::Marine-grade Steel (AH36),raw_material,3,41,10,0,False,2
+627,RAW::Marine-grade Steel (AH36),raw_material,3,42,10,0,False,2
+628,RAW::Marine-grade Steel (AH36),raw_material,3,43,10,0,False,2
+629,RAW::Marine-grade Steel (AH36),raw_material,3,44,10,0,False,2
+630,RAW::Marine-grade Steel (AH36),raw_material,3,45,10,1,True,4
+631,RAW::Nickel-based Superalloy,raw_material,3,1,5,0,False,0
+632,RAW::Nickel-based Superalloy,raw_material,3,2,5,0,False,0
+633,RAW::Nickel-based Superalloy,raw_material,3,3,5,0,False,0
+634,RAW::Nickel-based Superalloy,raw_material,3,4,5,0,False,0
+635,RAW::Nickel-based Superalloy,raw_material,3,5,5,0,False,0
+636,RAW::Nickel-based Superalloy,raw_material,3,6,5,0,False,1
+637,RAW::Nickel-based Superalloy,raw_material,3,7,5,0,False,1
+638,RAW::Nickel-based Superalloy,raw_material,3,8,5,0,False,1
+639,RAW::Nickel-based Superalloy,raw_material,3,9,5,0,False,1
+640,RAW::Nickel-based Superalloy,raw_material,3,10,5,0,False,1
+641,RAW::Nickel-based Superalloy,raw_material,3,11,5,0,False,1
+642,RAW::Nickel-based Superalloy,raw_material,3,12,5,0,False,1
+643,RAW::Nickel-based Superalloy,raw_material,3,13,5,0,False,1
+644,RAW::Nickel-based Superalloy,raw_material,3,14,5,0,False,1
+645,RAW::Nickel-based Superalloy,raw_material,3,15,5,0,False,1
+646,RAW::Nickel-based Superalloy,raw_material,3,16,5,0,False,1
+647,RAW::Nickel-based Superalloy,raw_material,3,17,5,0,False,2
+648,RAW::Nickel-based Superalloy,raw_material,3,18,5,0,False,2
+649,RAW::Nickel-based Superalloy,raw_material,3,19,5,0,False,2
+650,RAW::Nickel-based Superalloy,raw_material,3,20,5,0,False,2
+651,RAW::Nickel-based Superalloy,raw_material,3,21,5,0,False,2
+652,RAW::Nickel-based Superalloy,raw_material,3,22,5,0,False,2
+653,RAW::Nickel-based Superalloy,raw_material,3,23,5,0,False,2
+654,RAW::Nickel-based Superalloy,raw_material,3,24,5,0,False,2
+655,RAW::Nickel-based Superalloy,raw_material,3,25,5,0,False,2
+656,RAW::Nickel-based Superalloy,raw_material,3,26,5,0,False,2
+657,RAW::Nickel-based Superalloy,raw_material,3,27,5,0,False,2
+658,RAW::Nickel-based Superalloy,raw_material,3,28,5,0,False,2
+659,RAW::Nickel-based Superalloy,raw_material,3,29,5,0,False,2
+660,RAW::Nickel-based Superalloy,raw_material,3,30,5,0,False,2
+661,RAW::Nickel-based Superalloy,raw_material,3,31,5,0,False,2
+662,RAW::Nickel-based Superalloy,raw_material,3,32,5,0,False,2
+663,RAW::Nickel-based Superalloy,raw_material,3,33,5,0,False,2
+664,RAW::Nickel-based Superalloy,raw_material,3,34,5,0,False,2
+665,RAW::Nickel-based Superalloy,raw_material,3,35,5,0,False,2
+666,RAW::Nickel-based Superalloy,raw_material,3,36,5,0,False,2
+667,RAW::Nickel-based Superalloy,raw_material,3,37,5,0,False,2
+668,RAW::Nickel-based Superalloy,raw_material,3,38,5,0,False,2
+669,RAW::Nickel-based Superalloy,raw_material,3,39,5,0,False,2
+670,RAW::Nickel-based Superalloy,raw_material,3,40,5,0,False,2
+671,RAW::Nickel-based Superalloy,raw_material,3,41,5,0,False,2
+672,RAW::Nickel-based Superalloy,raw_material,3,42,5,0,False,2
+673,RAW::Nickel-based Superalloy,raw_material,3,43,5,0,False,2
+674,RAW::Nickel-based Superalloy,raw_material,3,44,5,0,False,2
+675,RAW::Nickel-based Superalloy,raw_material,3,45,5,0,False,2
+676,RAW::Quartz Crystal,raw_material,3,1,3,0,False,0
+677,RAW::Quartz Crystal,raw_material,3,2,3,0,False,0
+678,RAW::Quartz Crystal,raw_material,3,3,3,0,False,0
+679,RAW::Quartz Crystal,raw_material,3,4,3,0,False,1
+680,RAW::Quartz Crystal,raw_material,3,5,3,0,False,1
+681,RAW::Quartz Crystal,raw_material,3,6,3,0,False,1
+682,RAW::Quartz Crystal,raw_material,3,7,3,0,False,1
+683,RAW::Quartz Crystal,raw_material,3,8,3,0,False,1
+684,RAW::Quartz Crystal,raw_material,3,9,3,0,False,1
+685,RAW::Quartz Crystal,raw_material,3,10,3,0,False,1
+686,RAW::Quartz Crystal,raw_material,3,11,3,0,False,1
+687,RAW::Quartz Crystal,raw_material,3,12,3,0,False,1
+688,RAW::Quartz Crystal,raw_material,3,13,3,0,False,1
+689,RAW::Quartz Crystal,raw_material,3,14,3,0,False,2
+690,RAW::Quartz Crystal,raw_material,3,15,3,0,False,2
+691,RAW::Quartz Crystal,raw_material,3,16,3,0,False,2
+692,RAW::Quartz Crystal,raw_material,3,17,3,0,False,2
+693,RAW::Quartz Crystal,raw_material,3,18,3,0,False,2
+694,RAW::Quartz Crystal,raw_material,3,19,3,0,False,2
+695,RAW::Quartz Crystal,raw_material,3,20,3,0,False,2
+696,RAW::Quartz Crystal,raw_material,3,21,3,0,False,2
+697,RAW::Quartz Crystal,raw_material,3,22,3,0,False,2
+698,RAW::Quartz Crystal,raw_material,3,23,3,0,False,2
+699,RAW::Quartz Crystal,raw_material,3,24,3,0,False,2
+700,RAW::Quartz Crystal,raw_material,3,25,3,0,False,2
+701,RAW::Quartz Crystal,raw_material,3,26,3,0,False,2
+702,RAW::Quartz Crystal,raw_material,3,27,3,0,False,2
+703,RAW::Quartz Crystal,raw_material,3,28,3,0,False,2
+704,RAW::Quartz Crystal,raw_material,3,29,3,0,False,2
+705,RAW::Quartz Crystal,raw_material,3,30,3,0,False,2
+706,RAW::Quartz Crystal,raw_material,3,31,3,0,False,2
+707,RAW::Quartz Crystal,raw_material,3,32,3,0,False,2
+708,RAW::Quartz Crystal,raw_material,3,33,3,0,False,2
+709,RAW::Quartz Crystal,raw_material,3,34,3,0,False,2
+710,RAW::Quartz Crystal,raw_material,3,35,3,0,False,2
+711,RAW::Quartz Crystal,raw_material,3,36,3,0,False,2
+712,RAW::Quartz Crystal,raw_material,3,37,3,0,False,2
+713,RAW::Quartz Crystal,raw_material,3,38,3,0,False,2
+714,RAW::Quartz Crystal,raw_material,3,39,3,1,True,4
+715,RAW::Quartz Crystal,raw_material,3,40,3,2,True,4
+716,RAW::Quartz Crystal,raw_material,3,41,3,3,True,4
+717,RAW::Quartz Crystal,raw_material,3,42,3,4,True,4
+718,RAW::Quartz Crystal,raw_material,3,43,3,5,True,4
+719,RAW::Quartz Crystal,raw_material,3,44,3,6,True,4
+720,RAW::Quartz Crystal,raw_material,3,45,3,7,True,4
+721,RAW::RF-grade Copper,raw_material,3,1,9,0,False,0
+722,RAW::RF-grade Copper,raw_material,3,2,9,0,False,0
+723,RAW::RF-grade Copper,raw_material,3,3,9,0,False,0
+724,RAW::RF-grade Copper,raw_material,3,4,9,0,False,0
+725,RAW::RF-grade Copper,raw_material,3,5,9,0,False,0
+726,RAW::RF-grade Copper,raw_material,3,6,9,0,False,0
+727,RAW::RF-grade Copper,raw_material,3,7,9,0,False,0
+728,RAW::RF-grade Copper,raw_material,3,8,9,0,False,0
+729,RAW::RF-grade Copper,raw_material,3,9,9,0,False,0
+730,RAW::RF-grade Copper,raw_material,3,10,9,0,False,1
+731,RAW::RF-grade Copper,raw_material,3,11,9,0,False,1
+732,RAW::RF-grade Copper,raw_material,3,12,9,0,False,1
+733,RAW::RF-grade Copper,raw_material,3,13,9,0,False,1
+734,RAW::RF-grade Copper,raw_material,3,14,9,0,False,2
+735,RAW::RF-grade Copper,raw_material,3,15,9,0,False,2
+736,RAW::RF-grade Copper,raw_material,3,16,9,0,False,2
+737,RAW::RF-grade Copper,raw_material,3,17,9,0,False,2
+738,RAW::RF-grade Copper,raw_material,3,18,9,0,False,2
+739,RAW::RF-grade Copper,raw_material,3,19,9,0,False,2
+740,RAW::RF-grade Copper,raw_material,3,20,9,0,False,2
+741,RAW::RF-grade Copper,raw_material,3,21,9,0,False,2
+742,RAW::RF-grade Copper,raw_material,3,22,9,0,False,2
+743,RAW::RF-grade Copper,raw_material,3,23,9,0,False,2
+744,RAW::RF-grade Copper,raw_material,3,24,9,0,False,2
+745,RAW::RF-grade Copper,raw_material,3,25,9,0,False,2
+746,RAW::RF-grade Copper,raw_material,3,26,9,0,False,2
+747,RAW::RF-grade Copper,raw_material,3,27,9,0,False,2
+748,RAW::RF-grade Copper,raw_material,3,28,9,0,False,2
+749,RAW::RF-grade Copper,raw_material,3,29,9,0,False,2
+750,RAW::RF-grade Copper,raw_material,3,30,9,0,False,2
+751,RAW::RF-grade Copper,raw_material,3,31,9,0,False,2
+752,RAW::RF-grade Copper,raw_material,3,32,9,0,False,2
+753,RAW::RF-grade Copper,raw_material,3,33,9,0,False,2
+754,RAW::RF-grade Copper,raw_material,3,34,9,0,False,2
+755,RAW::RF-grade Copper,raw_material,3,35,9,0,False,2
+756,RAW::RF-grade Copper,raw_material,3,36,9,0,False,2
+757,RAW::RF-grade Copper,raw_material,3,37,9,0,False,2
+758,RAW::RF-grade Copper,raw_material,3,38,9,0,False,2
+759,RAW::RF-grade Copper,raw_material,3,39,9,1,True,4
+760,RAW::RF-grade Copper,raw_material,3,40,9,2,True,4
+761,RAW::RF-grade Copper,raw_material,3,41,9,3,True,4
+762,RAW::RF-grade Copper,raw_material,3,42,9,4,True,4
+763,RAW::RF-grade Copper,raw_material,3,43,9,5,True,4
+764,RAW::RF-grade Copper,raw_material,3,44,9,6,True,4
+765,RAW::RF-grade Copper,raw_material,3,45,9,7,True,4
+766,RAW::Rare-earth Magnets (NdFeB),raw_material,3,1,9,0,False,0
+767,RAW::Rare-earth Magnets (NdFeB),raw_material,3,2,9,0,False,0
+768,RAW::Rare-earth Magnets (NdFeB),raw_material,3,3,9,0,False,0
+769,RAW::Rare-earth Magnets (NdFeB),raw_material,3,4,9,0,False,0
+770,RAW::Rare-earth Magnets (NdFeB),raw_material,3,5,9,0,False,0
+771,RAW::Rare-earth Magnets (NdFeB),raw_material,3,6,9,0,False,0
+772,RAW::Rare-earth Magnets (NdFeB),raw_material,3,7,9,0,False,0
+773,RAW::Rare-earth Magnets (NdFeB),raw_material,3,8,9,0,False,0
+774,RAW::Rare-earth Magnets (NdFeB),raw_material,3,9,9,0,False,0
+775,RAW::Rare-earth Magnets (NdFeB),raw_material,3,10,9,0,False,1
+776,RAW::Rare-earth Magnets (NdFeB),raw_material,3,11,9,0,False,1
+777,RAW::Rare-earth Magnets (NdFeB),raw_material,3,12,9,0,False,1
+778,RAW::Rare-earth Magnets (NdFeB),raw_material,3,13,9,0,False,1
+779,RAW::Rare-earth Magnets (NdFeB),raw_material,3,14,9,0,False,1
+780,RAW::Rare-earth Magnets (NdFeB),raw_material,3,15,9,0,False,1
+781,RAW::Rare-earth Magnets (NdFeB),raw_material,3,16,9,0,False,1
+782,RAW::Rare-earth Magnets (NdFeB),raw_material,3,17,9,0,False,1
+783,RAW::Rare-earth Magnets (NdFeB),raw_material,3,18,9,0,False,1
+784,RAW::Rare-earth Magnets (NdFeB),raw_material,3,19,9,0,False,1
+785,RAW::Rare-earth Magnets (NdFeB),raw_material,3,20,9,0,False,2
+786,RAW::Rare-earth Magnets (NdFeB),raw_material,3,21,9,0,False,2
+787,RAW::Rare-earth Magnets (NdFeB),raw_material,3,22,9,0,False,2
+788,RAW::Rare-earth Magnets (NdFeB),raw_material,3,23,9,0,False,2
+789,RAW::Rare-earth Magnets (NdFeB),raw_material,3,24,9,0,False,2
+790,RAW::Rare-earth Magnets (NdFeB),raw_material,3,25,9,0,False,2
+791,RAW::Rare-earth Magnets (NdFeB),raw_material,3,26,9,0,False,2
+792,RAW::Rare-earth Magnets (NdFeB),raw_material,3,27,9,0,False,2
+793,RAW::Rare-earth Magnets (NdFeB),raw_material,3,28,9,0,False,2
+794,RAW::Rare-earth Magnets (NdFeB),raw_material,3,29,9,0,False,2
+795,RAW::Rare-earth Magnets (NdFeB),raw_material,3,30,9,0,False,2
+796,RAW::Rare-earth Magnets (NdFeB),raw_material,3,31,9,0,False,2
+797,RAW::Rare-earth Magnets (NdFeB),raw_material,3,32,9,0,False,2
+798,RAW::Rare-earth Magnets (NdFeB),raw_material,3,33,9,0,False,2
+799,RAW::Rare-earth Magnets (NdFeB),raw_material,3,34,9,0,False,2
+800,RAW::Rare-earth Magnets (NdFeB),raw_material,3,35,9,0,False,2
+801,RAW::Rare-earth Magnets (NdFeB),raw_material,3,36,9,0,False,2
+802,RAW::Rare-earth Magnets (NdFeB),raw_material,3,37,9,0,False,2
+803,RAW::Rare-earth Magnets (NdFeB),raw_material,3,38,9,0,False,2
+804,RAW::Rare-earth Magnets (NdFeB),raw_material,3,39,9,0,False,2
+805,RAW::Rare-earth Magnets (NdFeB),raw_material,3,40,9,0,False,2
+806,RAW::Rare-earth Magnets (NdFeB),raw_material,3,41,9,0,False,2
+807,RAW::Rare-earth Magnets (NdFeB),raw_material,3,42,9,0,False,2
+808,RAW::Rare-earth Magnets (NdFeB),raw_material,3,43,9,0,False,2
+809,RAW::Rare-earth Magnets (NdFeB),raw_material,3,44,9,0,False,2
+810,RAW::Rare-earth Magnets (NdFeB),raw_material,3,45,9,1,True,4
+811,RAW::Stainless Steel 316,raw_material,3,1,8,0,False,0
+812,RAW::Stainless Steel 316,raw_material,3,2,8,0,False,0
+813,RAW::Stainless Steel 316,raw_material,3,3,8,0,False,0
+814,RAW::Stainless Steel 316,raw_material,3,4,8,0,False,0
+815,RAW::Stainless Steel 316,raw_material,3,5,8,0,False,0
+816,RAW::Stainless Steel 316,raw_material,3,6,8,0,False,0
+817,RAW::Stainless Steel 316,raw_material,3,7,8,0,False,0
+818,RAW::Stainless Steel 316,raw_material,3,8,8,0,False,0
+819,RAW::Stainless Steel 316,raw_material,3,9,8,0,False,1
+820,RAW::Stainless Steel 316,raw_material,3,10,8,0,False,1
+821,RAW::Stainless Steel 316,raw_material,3,11,8,0,False,1
+822,RAW::Stainless Steel 316,raw_material,3,12,8,0,False,1
+823,RAW::Stainless Steel 316,raw_material,3,13,8,0,False,1
+824,RAW::Stainless Steel 316,raw_material,3,14,8,0,False,1
+825,RAW::Stainless Steel 316,raw_material,3,15,8,0,False,1
+826,RAW::Stainless Steel 316,raw_material,3,16,8,0,False,1
+827,RAW::Stainless Steel 316,raw_material,3,17,8,0,False,1
+828,RAW::Stainless Steel 316,raw_material,3,18,8,0,False,1
+829,RAW::Stainless Steel 316,raw_material,3,19,8,0,False,2
+830,RAW::Stainless Steel 316,raw_material,3,20,8,0,False,2
+831,RAW::Stainless Steel 316,raw_material,3,21,8,0,False,2
+832,RAW::Stainless Steel 316,raw_material,3,22,8,0,False,2
+833,RAW::Stainless Steel 316,raw_material,3,23,8,0,False,2
+834,RAW::Stainless Steel 316,raw_material,3,24,8,0,False,2
+835,RAW::Stainless Steel 316,raw_material,3,25,8,0,False,2
+836,RAW::Stainless Steel 316,raw_material,3,26,8,0,False,2
+837,RAW::Stainless Steel 316,raw_material,3,27,8,0,False,2
+838,RAW::Stainless Steel 316,raw_material,3,28,8,0,False,2
+839,RAW::Stainless Steel 316,raw_material,3,29,8,0,False,2
+840,RAW::Stainless Steel 316,raw_material,3,30,8,0,False,2
+841,RAW::Stainless Steel 316,raw_material,3,31,8,0,False,2
+842,RAW::Stainless Steel 316,raw_material,3,32,8,0,False,2
+843,RAW::Stainless Steel 316,raw_material,3,33,8,0,False,2
+844,RAW::Stainless Steel 316,raw_material,3,34,8,0,False,2
+845,RAW::Stainless Steel 316,raw_material,3,35,8,0,False,2
+846,RAW::Stainless Steel 316,raw_material,3,36,8,0,False,2
+847,RAW::Stainless Steel 316,raw_material,3,37,8,0,False,2
+848,RAW::Stainless Steel 316,raw_material,3,38,8,0,False,2
+849,RAW::Stainless Steel 316,raw_material,3,39,8,0,False,2
+850,RAW::Stainless Steel 316,raw_material,3,40,8,0,False,2
+851,RAW::Stainless Steel 316,raw_material,3,41,8,0,False,2
+852,RAW::Stainless Steel 316,raw_material,3,42,8,0,False,2
+853,RAW::Stainless Steel 316,raw_material,3,43,8,0,False,2
+854,RAW::Stainless Steel 316,raw_material,3,44,8,1,True,4
+855,RAW::Stainless Steel 316,raw_material,3,45,8,2,True,4
+856,RAW::Titanium Alloy Bar,raw_material,3,1,6,0,False,0
+857,RAW::Titanium Alloy Bar,raw_material,3,2,6,0,False,0
+858,RAW::Titanium Alloy Bar,raw_material,3,3,6,0,False,0
+859,RAW::Titanium Alloy Bar,raw_material,3,4,6,0,False,0
+860,RAW::Titanium Alloy Bar,raw_material,3,5,6,0,False,0
+861,RAW::Titanium Alloy Bar,raw_material,3,6,6,0,False,0
+862,RAW::Titanium Alloy Bar,raw_material,3,7,6,0,False,1
+863,RAW::Titanium Alloy Bar,raw_material,3,8,6,0,False,1
+864,RAW::Titanium Alloy Bar,raw_material,3,9,6,0,False,1
+865,RAW::Titanium Alloy Bar,raw_material,3,10,6,0,False,1
+866,RAW::Titanium Alloy Bar,raw_material,3,11,6,0,False,1
+867,RAW::Titanium Alloy Bar,raw_material,3,12,6,0,False,1
+868,RAW::Titanium Alloy Bar,raw_material,3,13,6,0,False,1
+869,RAW::Titanium Alloy Bar,raw_material,3,14,6,0,False,1
+870,RAW::Titanium Alloy Bar,raw_material,3,15,6,0,False,1
+871,RAW::Titanium Alloy Bar,raw_material,3,16,6,0,False,1
+872,RAW::Titanium Alloy Bar,raw_material,3,17,6,0,False,1
+873,RAW::Titanium Alloy Bar,raw_material,3,18,6,0,False,2
+874,RAW::Titanium Alloy Bar,raw_material,3,19,6,0,False,2
+875,RAW::Titanium Alloy Bar,raw_material,3,20,6,0,False,2
+876,RAW::Titanium Alloy Bar,raw_material,3,21,6,0,False,2
+877,RAW::Titanium Alloy Bar,raw_material,3,22,6,0,False,2
+878,RAW::Titanium Alloy Bar,raw_material,3,23,6,0,False,2
+879,RAW::Titanium Alloy Bar,raw_material,3,24,6,0,False,2
+880,RAW::Titanium Alloy Bar,raw_material,3,25,6,0,False,2
+881,RAW::Titanium Alloy Bar,raw_material,3,26,6,0,False,2
+882,RAW::Titanium Alloy Bar,raw_material,3,27,6,0,False,2
+883,RAW::Titanium Alloy Bar,raw_material,3,28,6,0,False,2
+884,RAW::Titanium Alloy Bar,raw_material,3,29,6,0,False,2
+885,RAW::Titanium Alloy Bar,raw_material,3,30,6,0,False,2
+886,RAW::Titanium Alloy Bar,raw_material,3,31,6,0,False,2
+887,RAW::Titanium Alloy Bar,raw_material,3,32,6,0,False,2
+888,RAW::Titanium Alloy Bar,raw_material,3,33,6,0,False,2
+889,RAW::Titanium Alloy Bar,raw_material,3,34,6,0,False,2
+890,RAW::Titanium Alloy Bar,raw_material,3,35,6,0,False,2
+891,RAW::Titanium Alloy Bar,raw_material,3,36,6,0,False,2
+892,RAW::Titanium Alloy Bar,raw_material,3,37,6,0,False,2
+893,RAW::Titanium Alloy Bar,raw_material,3,38,6,0,False,2
+894,RAW::Titanium Alloy Bar,raw_material,3,39,6,0,False,2
+895,RAW::Titanium Alloy Bar,raw_material,3,40,6,0,False,2
+896,RAW::Titanium Alloy Bar,raw_material,3,41,6,0,False,2
+897,RAW::Titanium Alloy Bar,raw_material,3,42,6,0,False,2
+898,RAW::Titanium Alloy Bar,raw_material,3,43,6,0,False,2
+899,RAW::Titanium Alloy Bar,raw_material,3,44,6,0,False,2
+900,RAW::Titanium Alloy Bar,raw_material,3,45,6,0,False,2
+901,RAW::Weld Wire (Flux-Cored),raw_material,3,1,7,0,False,0
+902,RAW::Weld Wire (Flux-Cored),raw_material,3,2,7,0,False,0
+903,RAW::Weld Wire (Flux-Cored),raw_material,3,3,7,0,False,0
+904,RAW::Weld Wire (Flux-Cored),raw_material,3,4,7,0,False,0
+905,RAW::Weld Wire (Flux-Cored),raw_material,3,5,7,0,False,0
+906,RAW::Weld Wire (Flux-Cored),raw_material,3,6,7,0,False,0
+907,RAW::Weld Wire (Flux-Cored),raw_material,3,7,7,0,False,0
+908,RAW::Weld Wire (Flux-Cored),raw_material,3,8,7,0,False,1
+909,RAW::Weld Wire (Flux-Cored),raw_material,3,9,7,0,False,1
+910,RAW::Weld Wire (Flux-Cored),raw_material,3,10,7,0,False,1
+911,RAW::Weld Wire (Flux-Cored),raw_material,3,11,7,0,False,1
+912,RAW::Weld Wire (Flux-Cored),raw_material,3,12,7,0,False,1
+913,RAW::Weld Wire (Flux-Cored),raw_material,3,13,7,0,False,1
+914,RAW::Weld Wire (Flux-Cored),raw_material,3,14,7,0,False,1
+915,RAW::Weld Wire (Flux-Cored),raw_material,3,15,7,0,False,1
+916,RAW::Weld Wire (Flux-Cored),raw_material,3,16,7,0,False,1
+917,RAW::Weld Wire (Flux-Cored),raw_material,3,17,7,0,False,2
+918,RAW::Weld Wire (Flux-Cored),raw_material,3,18,7,0,False,2
+919,RAW::Weld Wire (Flux-Cored),raw_material,3,19,7,0,False,2
+920,RAW::Weld Wire (Flux-Cored),raw_material,3,20,7,0,False,2
+921,RAW::Weld Wire (Flux-Cored),raw_material,3,21,7,0,False,2
+922,RAW::Weld Wire (Flux-Cored),raw_material,3,22,7,0,False,2
+923,RAW::Weld Wire (Flux-Cored),raw_material,3,23,7,0,False,2
+924,RAW::Weld Wire (Flux-Cored),raw_material,3,24,7,0,False,2
+925,RAW::Weld Wire (Flux-Cored),raw_material,3,25,7,0,False,2
+926,RAW::Weld Wire (Flux-Cored),raw_material,3,26,7,0,False,2
+927,RAW::Weld Wire (Flux-Cored),raw_material,3,27,7,0,False,2
+928,RAW::Weld Wire (Flux-Cored),raw_material,3,28,7,0,False,2
+929,RAW::Weld Wire (Flux-Cored),raw_material,3,29,7,0,False,2
+930,RAW::Weld Wire (Flux-Cored),raw_material,3,30,7,0,False,2
+931,RAW::Weld Wire (Flux-Cored),raw_material,3,31,7,0,False,2
+932,RAW::Weld Wire (Flux-Cored),raw_material,3,32,7,0,False,2
+933,RAW::Weld Wire (Flux-Cored),raw_material,3,33,7,0,False,2
+934,RAW::Weld Wire (Flux-Cored),raw_material,3,34,7,0,False,2
+935,RAW::Weld Wire (Flux-Cored),raw_material,3,35,7,0,False,2
+936,RAW::Weld Wire (Flux-Cored),raw_material,3,36,7,0,False,2
+937,RAW::Weld Wire (Flux-Cored),raw_material,3,37,7,0,False,2
+938,RAW::Weld Wire (Flux-Cored),raw_material,3,38,7,0,False,2
+939,RAW::Weld Wire (Flux-Cored),raw_material,3,39,7,0,False,2
+940,RAW::Weld Wire (Flux-Cored),raw_material,3,40,7,0,False,2
+941,RAW::Weld Wire (Flux-Cored),raw_material,3,41,7,0,False,2
+942,RAW::Weld Wire (Flux-Cored),raw_material,3,42,7,1,True,4
+943,RAW::Weld Wire (Flux-Cored),raw_material,3,43,7,2,True,4
+944,RAW::Weld Wire (Flux-Cored),raw_material,3,44,7,3,True,4
+945,RAW::Weld Wire (Flux-Cored),raw_material,3,45,7,4,True,4

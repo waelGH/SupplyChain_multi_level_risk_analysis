@@ -1,0 +1,22 @@
+disrupted_node_id,node_type,layer_id,local_buffer_days,critical_disruption_days,critical_disruption_exceeds_45_days,root_delay_at_45_days,max_root_delay_days,max_impacted_nodes,num_magnitudes_causing_root_delay
+COMP::Hull & Structural,component,1,25,26,False,20,20,2,20
+COMP::Navigation & Sensors,component,1,25,26,False,20,20,2,20
+PART::Radar Antenna,part,2,4,30,False,16,16,3,16
+COMP::Propulsion System,component,1,29,30,False,16,16,2,16
+RAW::Composite Epoxy Prepreg,raw_material,3,5,35,False,11,11,4,11
+PART::Hull Plate Section,part,2,9,35,False,11,11,3,11
+PART::Ballast Pump,part,2,10,36,False,10,10,3,10
+PART::Inertial Navigation Unit,part,2,10,36,False,10,10,3,10
+RAW::Elastomer Seals (Nitrile),raw_material,3,3,39,False,7,7,4,7
+RAW::Quartz Crystal,raw_material,3,3,39,False,7,7,4,7
+RAW::RF-grade Copper,raw_material,3,9,39,False,7,7,4,7
+PART::Reduction Gearbox,part,2,10,40,False,6,6,3,6
+PART::Gas Turbine Engine,part,2,11,41,False,5,5,3,5
+RAW::Weld Wire (Flux-Cored),raw_material,3,7,42,False,4,4,4,4
+RAW::Stainless Steel 316,raw_material,3,8,44,False,2,2,4,2
+RAW::Alloy Steel Gear Blank,raw_material,3,5,45,False,1,1,4,1
+RAW::Marine-grade Steel (AH36),raw_material,3,10,45,False,1,1,4,1
+RAW::Rare-earth Magnets (NdFeB),raw_material,3,9,45,False,1,1,4,1
+RAW::High-Strength Bearing Steel,raw_material,3,8,,True,0,0,2,0
+RAW::Nickel-based Superalloy,raw_material,3,5,,True,0,0,2,0
+RAW::Titanium Alloy Bar,raw_material,3,6,,True,0,0,2,0
